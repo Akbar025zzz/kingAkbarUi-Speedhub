@@ -35,10 +35,10 @@ local CONFIG = {
     Size                   = UDim2.fromOffset(420, 280),
     TabWidth               = 100,
     CornerRadius           = 6,
-    BackgroundImage        = "",                              -- isi dengan rbxassetid://... kalau mau gambar
-    BackgroundTransparency = 0.55,
+    BackgroundImage        = "rbxassetid://110409843085547",
+    BackgroundTransparency = 0.6,
     BackgroundTint         = Color3.fromRGB(0, 0, 0),
-    BackgroundTintTrans    = 0.4,
+    BackgroundTintTrans    = 0.3,
   },
   Notification = {
     Width       = 320,
@@ -51,7 +51,7 @@ local CONFIG = {
     ArrowIcon      = "rbxassetid://125609963478878",
     DropdownArrow  = "rbxassetid://90200523188815",
     DefaultIcon    = "rbxassetid://7734010488",
-    FloatingButton = "rbxassetid://136890595976124",
+    FloatingButton = "rbxassetid://91115084979317",   -- ⬅️ ICON BARU
   },
   Behavior = {
     AntiAFK = true,
