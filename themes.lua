@@ -5,10 +5,17 @@
   ╚══════════════════════════════════════════════════╝
 ]]
 
+-- Catatan:
+--  * Panel = warna overlay transparan untuk kartu/item. Tema gelap pakai putih, tema terang pakai hitam.
+--  * Pakai SetTheme SEBELUM CreateWindow.
+--  * Untuk tema Light, matikan background image supaya tidak tertutup tint gelap:
+--      Library:GetConfig().Window.BackgroundImage = ""
+
 local Themes = {}
 
 Themes.Dark = {
   Primary    = Color3.fromRGB(255, 255, 255),
+  Panel      = Color3.fromRGB(255, 255, 255),
   Background = Color3.fromRGB(10, 10, 10),
   Secondary  = Color3.fromRGB(25, 25, 25),
   Text       = Color3.fromRGB(255, 255, 255),
@@ -20,6 +27,7 @@ Themes.Dark = {
 
 Themes.Neon = {
   Primary    = Color3.fromRGB(0, 255, 180),
+  Panel      = Color3.fromRGB(255, 255, 255),
   Background = Color3.fromRGB(10, 10, 20),
   Secondary  = Color3.fromRGB(20, 20, 40),
   Text       = Color3.fromRGB(0, 255, 180),
@@ -31,6 +39,7 @@ Themes.Neon = {
 
 Themes.Cyberpunk = {
   Primary    = Color3.fromRGB(255, 0, 200),
+  Panel      = Color3.fromRGB(255, 255, 255),
   Background = Color3.fromRGB(15, 5, 30),
   Secondary  = Color3.fromRGB(40, 10, 60),
   Text       = Color3.fromRGB(255, 200, 255),
@@ -42,6 +51,7 @@ Themes.Cyberpunk = {
 
 Themes.BloodRed = {
   Primary    = Color3.fromRGB(255, 30, 30),
+  Panel      = Color3.fromRGB(255, 255, 255),
   Background = Color3.fromRGB(10, 5, 5),
   Secondary  = Color3.fromRGB(30, 10, 10),
   Text       = Color3.fromRGB(255, 255, 255),
@@ -53,6 +63,7 @@ Themes.BloodRed = {
 
 Themes.Gold = {
   Primary    = Color3.fromRGB(255, 200, 50),
+  Panel      = Color3.fromRGB(255, 255, 255),
   Background = Color3.fromRGB(15, 12, 5),
   Secondary  = Color3.fromRGB(35, 28, 15),
   Text       = Color3.fromRGB(255, 240, 200),
@@ -64,6 +75,7 @@ Themes.Gold = {
 
 Themes.Purple = {
   Primary    = Color3.fromRGB(180, 100, 255),
+  Panel      = Color3.fromRGB(255, 255, 255),
   Background = Color3.fromRGB(15, 10, 25),
   Secondary  = Color3.fromRGB(35, 20, 55),
   Text       = Color3.fromRGB(240, 230, 255),
@@ -75,6 +87,7 @@ Themes.Purple = {
 
 Themes.Ocean = {
   Primary    = Color3.fromRGB(0, 200, 255),
+  Panel      = Color3.fromRGB(255, 255, 255),
   Background = Color3.fromRGB(5, 15, 25),
   Secondary  = Color3.fromRGB(15, 35, 55),
   Text       = Color3.fromRGB(220, 240, 255),
@@ -86,6 +99,7 @@ Themes.Ocean = {
 
 Themes.Light = {
   Primary    = Color3.fromRGB(0, 100, 220),
+  Panel      = Color3.fromRGB(0, 0, 0),
   Background = Color3.fromRGB(240, 240, 245),
   Secondary  = Color3.fromRGB(210, 210, 220),
   Text       = Color3.fromRGB(20, 20, 30),
@@ -97,6 +111,7 @@ Themes.Light = {
 
 Themes.Matrix = {
   Primary    = Color3.fromRGB(0, 255, 0),
+  Panel      = Color3.fromRGB(255, 255, 255),
   Background = Color3.fromRGB(0, 8, 0),
   Secondary  = Color3.fromRGB(0, 25, 0),
   Text       = Color3.fromRGB(0, 255, 0),
@@ -108,6 +123,7 @@ Themes.Matrix = {
 
 Themes.Sunset = {
   Primary    = Color3.fromRGB(255, 130, 30),
+  Panel      = Color3.fromRGB(255, 255, 255),
   Background = Color3.fromRGB(25, 10, 15),
   Secondary  = Color3.fromRGB(50, 20, 25),
   Text       = Color3.fromRGB(255, 230, 200),
