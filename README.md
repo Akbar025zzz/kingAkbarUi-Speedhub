@@ -5,7 +5,7 @@
 ![Lua](https://img.shields.io/badge/Lua-5.1-blue)
 ![Roblox](https://img.shields.io/badge/Roblox-Exploit-red)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/version-1.2-blueviolet)
+![Version](https://img.shields.io/badge/version-1.3-blueviolet)
 
 ---
 
@@ -19,7 +19,7 @@
 - 🖱️ **Draggable** window & floating button
 - 📱 **Touch support** (mobile-friendly)
 - 🎯 **Anti-AFK** otomatis
-- 🎨 **10+ preset tema** siap pakai
+- 🎨 **10 preset tema** siap pakai
 
 ---
 
@@ -195,6 +195,20 @@ local Window = Library:CreateWindow({
 | `Time` | number | `0.5` |
 | `Delay` | number | `5` |
 
+### 🔹 Fungsi Tambahan
+
+| Objek | Method |
+|---|---|
+| `Window` | `Show()`, `Hide()`, `Toggle()`, `Destroy()` |
+| Semua item | `SetTitle(text)`, `SetContent(text)`, `SetVisible(bool)`, `Destroy()` |
+| Toggle | `Set(bool)` |
+| Slider | `Set(value, fire)` — `fire = true` memanggil callback |
+| Input | `Set(text)` |
+| Dropdown | `Set(value)`, `Refresh(list, selected)`, `AddOption(name)`, `Clear()` |
+| `Library` | `Notify(config)` (alias `SetNotification`), `Destroy()` |
+
+> Argumen bisa dipakai dalam format array (`{ "Title", "Content", ... }`) **atau** bernama (`{ Title = "..." }`).
+
 ---
 
 ## 🔥 Wrapper (Auto-Save)
@@ -216,6 +230,18 @@ end)
 
 **Magic value `"Save"`** → otomatis load dari config & auto-save saat berubah.
 
+- Hanya `"Save"` yang memuat nilai tersimpan; `Default` eksplisit selalu dipakai apa adanya.
+- Kunci simpanan = **nama item**, jadi pakai nama yang unik di seluruh hub.
+- Penyimpanan di-debounce (0.5 detik) agar tidak menulis berulang-ulang.
+- Isi `storeFn` bila ingin menulis ke file:
+
+```lua
+FuncsV3:SetTable(getgenv().MyConfig, function(cfg)
+  writefile("MyHub.json", game:GetService("HttpService"):JSONEncode(cfg))
+end)
+```
+- `FuncsV3:Slider(Tab, Name, Content, Min, Max, Default, Callback, Increment)` — `Increment` opsional.
+
 ---
 
 ## 📁 Contoh Lengkap
@@ -235,7 +261,7 @@ Lihat folder [`examples/`](examples/) untuk referensi:
 kingAkbarUi-Speedhub/
 ├── init.lua              ← library utama
 ├── wrapper.lua           ← shortcut + auto-save
-├── themes.lua            ← 10+ preset tema
+├── themes.lua            ← 10 preset tema
 ├── README.md
 ├── LICENSE
 └── examples/
@@ -249,7 +275,9 @@ kingAkbarUi-Speedhub/
 
 ## 💡 Tips
 
-- **Ganti tema** bisa sebelum **atau** sesudah `CreateWindow` — tapi lebih baik sebelum
+- **Tema, font, background, dan icon floating button harus diatur SEBELUM `CreateWindow`** — elemen yang sudah dibuat tidak ikut berubah
+- Tema **Light**: matikan background image (`Library:GetConfig().Window.BackgroundImage = ""`) supaya tidak tertutup tint gelap
+- Menjalankan script dua kali aman: UI lama otomatis dibersihkan
 - **Background image** lebih bagus pakai resolusi **1280x720** ke atas
 - **Icon floating button** sebaiknya PNG transparan ukuran **128x128**
 - **Font custom** bisa pakai `rbxasset://fonts/...` atau asset ID sendiri
