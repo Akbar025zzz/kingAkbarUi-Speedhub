@@ -1,22 +1,27 @@
 --[[
   ╔══════════════════════════════════════════════════╗
-  ║          KING AKBAR UI LIBRARY  v2.1             ║
+  ║          KING AKBAR UI LIBRARY  v2.2             ║
   ║    github.com/Akbar025zzz/kingAkbarUi-Speedhub   ║
   ╚══════════════════════════════════════════════════╝
 
-  v2.1 — MODERN REDESIGN:
-  • Window 520x340, proporsi pas ala hub modern
-  • Topbar 44px + tombol bulat (min/close) dengan hover
-  • Tab: accent fill + indikator bar 3px + hover state
-  • Item 40px lega, radius 5, hover effect halus
-  • Toggle iOS-style 40x20 (animasi mantul)
-  • Slider premium: kotak nilai + track fill + knob bulat
-  • Scrollbar konten 3px halus
-  • Semua ukuran bisa di-tweak lewat CONFIG.Layout
-  • API sama persis dengan v2.0 (backward compatible)
+  v2.2 — AUTO-FIT SIZING (UI tidak pernah kebesaran):
+  • Window default 520x340, otomatis mengecil di layar kecil
+  • SizeUi apapun (bahkan 2000x1500) auto-scale ke max 92% layar
+  • SizeUi support Scale: UDim2.fromScale(0.5, 0.6) → dihitung dari viewport
+  • Min size 380x280 (dibatasi ukuran layar — tidak memaksa di HP)
+  • Rotate/resize layar → window mengecil otomatis + posisi di-clamp
+  • Dialog & ColorPicker auto-fit via UIScale
+  • Notifikasi & floating button clamp ke viewport
+  • TabWidth otomatis dibatasi max 38% lebar window
 
-  Fitur v2.0 tetap: Keybind • ColorPicker • Dialog • Tooltip •
-  Theme Runtime • SaveKey • Notif Queue • Sound • ToggleKey
+  v2.1 — Modern design (topbar tombol bulat, tab accent bar,
+  item 40px, toggle iOS, slider premium, scrollbar halus).
+  v2.0 — Keybind • ColorPicker • Dialog • Tooltip • Theme Runtime •
+  SaveKey • Notif Queue • Sound • ToggleKey • Viewport Clamp.
+
+  CONTOH:
+    local Lib = loadstring(game:HttpGet("URL_RAW_INIT_LUA"))()
+    local Win = Lib:CreateWindow({ Title = "My Hub" })  -- otomatis pas ukurannya
 ]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -92,26 +97,33 @@ local CONFIG = {
     LineColor  = Color3.fromRGB(100, 100, 115),
   },
   Font = { Bold = Enum.Font.GothamBold, Regular = Enum.Font.Gotham },
-  Layout = { -- semua ukuran UI di sini — gampang di-tweak
-    TopbarHeight    = 44,
-    SidebarOffset   = 10,   -- jarak sidebar dari kiri/atas
-    ContentGap      = 24,   -- jarak konten dari sidebar
-    TabHeight       = 32,   -- tinggi tombol tab
-    TabRadius       = 6,
-    ItemHeight      = 40,   -- tinggi item tanpa deskripsi
-    ItemSpacing     = 4,    -- jarak antar item
-    ItemRadius      = 5,
-    ItemPadX        = 12,   -- padding kiri/kanan konten item
-    ToggleW         = 40, ToggleH  = 20, ToggleKnob = 16,
-    SliderTrackH    = 6,   SliderKnob = 14, ValueBoxW = 54, ValueBoxH = 22,
-    DropW           = 120, DropH   = 24,
-    KeyW            = 64,  KeyH    = 22,
-    SwatchW         = 48,  SwatchH = 22,
-    InputW          = 150, InputH  = 24,
-    ScrollThick     = 3,
+  Layout = {
+    -- ── SIZING (v2.2 auto-fit) ──
+    MaxScreenRatio = 0.92,  -- window max 92% dari viewport
+    MinWindowW     = 380,   -- min lebar window (auto-dibatasi ukuran layar)
+    MinWindowH     = 280,   -- min tinggi window (auto-dibatasi ukuran layar)
+    ScreenMargin   = 8,     -- margin popup (dialog/colorpicker) dari tepi layar
+    -- ── KOMPONEN ──
+    TopbarHeight  = 44,
+    SidebarOffset = 10,
+    ContentGap    = 24,
+    TabHeight     = 32,
+    TabRadius     = 6,
+    ItemHeight    = 40,
+    ItemSpacing   = 4,
+    ItemRadius    = 5,
+    ItemPadX      = 12,
+    ToggleW       = 40, ToggleH   = 20, ToggleKnob = 16,
+    SliderTrackH  = 6,  SliderKnob = 14, ValueBoxW = 54, ValueBoxH = 22,
+    DropW         = 120, DropH    = 24,
+    KeyW          = 64,  KeyH     = 22,
+    SwatchW       = 48,  SwatchH  = 22,
+    InputW        = 150, InputH   = 24,
+    ScrollThick   = 3,
   },
   Window = {
-    Size                   = UDim2.fromOffset(520, 340),
+    Size                   = UDim2.fromOffset(520, 340), -- desktop default
+    SmallSize              = UDim2.fromOffset(460, 310), -- layar sedang (<900px)
     TabWidth               = 112,
     CornerRadius           = 8,
     BackgroundImage        = "rbxassetid://110409843085547",
@@ -145,7 +157,7 @@ local Z = {
   Background = 0, Base = 1, Content = 2, Control = 3, Overlay = 4,
   Dropdown = 5, Popup = 60, Tooltip = 90, Dialog = 100, Notification = 110,
 }
-local L = CONFIG.Layout -- shortcut
+local L = CONFIG.Layout
 
 -- ═══════════════════════════════════════════════════
 --  HELPER
@@ -203,13 +215,11 @@ local function PlaySound(Name)
   end)
 end
 
--- Hover effect: ubah transparency halus
 local function HoverT(Inst, NormalT, HoverT)
   Inst.MouseEnter:Connect(function() Tween(Inst, { BackgroundTransparency = HoverT }, 0.12) end)
   Inst.MouseLeave:Connect(function() Tween(Inst, { BackgroundTransparency = NormalT }, 0.12) end)
 end
 
--- Registrasi elemen untuk theme runtime
 local function Themed(Inst, Prop, Key)
   table.insert(ThemedElements, { Inst = Inst, Prop = Prop, Key = Key })
 end
@@ -230,6 +240,62 @@ local function ApplyTheme()
   end
   ThemedElements = alive
 end
+
+-- ═══════════════════════════════════════════════════
+--  VIEWPORT & AUTO-FIT (inti v2.2)
+-- ═══════════════════════════════════════════════════
+local function GetViewport()
+  local cam = workspace.CurrentCamera
+  if cam and cam.ViewportSize.X > 0 then return cam.ViewportSize end
+  return Vector2.new(1280, 720)
+end
+
+-- Fit w×h ke viewport: jaga rasio, patuhi min & max
+local function FitWindowWH(w, h)
+  local vp = GetViewport()
+  local maxW = math.max(200, math.floor(vp.X * L.MaxScreenRatio))
+  local maxH = math.max(150, math.floor(vp.Y * L.MaxScreenRatio))
+  -- min dibatasi max (supaya tidak memaksa besar di layar kecil)
+  w = math.max(w, math.min(L.MinWindowW, maxW))
+  h = math.max(h, math.min(L.MinWindowH, maxH))
+  if w > maxW or h > maxH then
+    local s = math.min(maxW / w, maxH / h)
+    w, h = math.floor(w * s), math.floor(h * s)
+  end
+  return w, h, maxW, maxH
+end
+
+-- Auto-fit popup (dialog/colorpicker) via UIScale — semua isi ikut mengecil proporsional
+local function FitPopup(Frame, W, H)
+  local vp = GetViewport()
+  local m = L.ScreenMargin
+  local s = math.min(1, (vp.X - m * 2) / W, (vp.Y - m * 2) / H)
+  if s < 1 then
+    Custom = Custom -- (forward declare tidak perlu; fungsi dipanggil setelah Custom ada)
+    local sc = Instance.new("UIScale")
+    sc.Scale = s
+    sc.Parent = Frame
+  end
+end
+
+-- ── Watcher viewport (rotate device / resize window game) ──
+local ViewportWatchers = {}
+local function OnViewportChange(Fn)
+  table.insert(ViewportWatchers, Fn)
+end
+
+local CameraConn = nil
+local function WatchViewport()
+  if CameraConn then pcall(function() CameraConn:Disconnect() end) CameraConn = nil end
+  local cam = workspace.CurrentCamera
+  if cam then
+    CameraConn = BindLib(cam:GetPropertyChangedSignal("ViewportSize"), function()
+      for _, fn in ipairs(ViewportWatchers) do pcall(fn) end
+    end)
+  end
+end
+BindLib(workspace:GetPropertyChangedSignal("CurrentCamera"), WatchViewport)
+WatchViewport()
 
 -- ═══════════════════════════════════════════════════
 --  SAVE SYSTEM
@@ -382,12 +448,12 @@ local function ShowTooltip(Text, Pos)
   if not (TooltipGui and TooltipGui.Parent) then
     TooltipGui = NewScreenGui("KingAkbarUI_Tooltip", Z.Tooltip)
   end
-  local cam = workspace.CurrentCamera
-  local vp = cam and cam.ViewportSize or Vector2.new(1920, 1080)
+  local vp = GetViewport()
   local ok, size = pcall(TextService.GetTextSize, TextService, Text, 12,
     CONFIG.Font.Regular, Vector2.new(240, math.huge))
   if not ok then size = Vector2.new(120, 16) end
   local w, h = math.floor(size.X) + 16, math.floor(size.Y) + 10
+  w = math.min(w, vp.X - 16)
   local x = math.clamp(Pos.X + 14, 8, math.max(8, vp.X - w - 8))
   local y = Pos.Y - h - 10
   if y < 8 then y = Pos.Y + 20 end
@@ -463,7 +529,7 @@ local function MakeDraggable(Handle, Object, Bind)
 end
 
 -- ═══════════════════════════════════════════════════
---  FLOATING BUTTON
+--  FLOATING BUTTON (auto-clamp ke viewport)
 -- ═══════════════════════════════════════════════════
 local function CreateFloatingButton()
   local Gui = NewScreenGui("KingAkbarUI_Floating", 20)
@@ -480,6 +546,19 @@ local function CreateFloatingButton()
   Custom:Create("UICorner", { CornerRadius = UDim.new(0, 10) }, Btn)
   Custom:Create("UIStroke", { Color = CONFIG.Theme.Stroke, Thickness = 1, Transparency = 0.4 }, Btn)
   local DidMove = MakeDraggable(Btn, Btn, BindLib)
+
+  -- clamp saat layar berubah (rotate/resize)
+  OnViewportChange(function()
+    if not (Btn and Btn.Parent and Btn.Visible) then return end
+    local vp = GetViewport()
+    local sz, abs = Btn.AbsoluteSize, Btn.AbsolutePosition
+    if abs.X < 0 or abs.Y < 0 or abs.X + sz.X > vp.X or abs.Y + sz.Y > vp.Y then
+      local x = math.clamp(abs.X, 4, math.max(4, vp.X - sz.X - 4))
+      local y = math.clamp(abs.Y, 4, math.max(4, vp.Y - sz.Y - 4))
+      Btn.Position = UDim2.fromOffset(math.floor(x), math.floor(y))
+    end
+  end)
+
   return Btn, DidMove
 end
 
@@ -515,7 +594,7 @@ local function CircleClick(Button)
 end
 
 -- ═══════════════════════════════════════════════════
---  ITEM BASE — 40px lega, radius 5, hover halus
+--  ITEM BASE
 -- ═══════════════════════════════════════════════════
 local function NewItemBase(Parent, Order, Title, Content, Reserve)
   local Base = {}
@@ -607,7 +686,7 @@ end
 -- ═══════════════════════════════════════════════════
 --  LIBRARY
 -- ═══════════════════════════════════════════════════
-local Speed_Library = { Version = "2.1", Unloaded = false, Save = Save }
+local Speed_Library = { Version = "2.2", Unloaded = false, Save = Save }
 Speed_Library._bgImages = {}
 
 function Speed_Library:SetBackgroundImage(ImageId, Transparency)
@@ -625,10 +704,15 @@ function Speed_Library:SetBackgroundImage(ImageId, Transparency)
   end
 end
 
--- ─────────────── Notification ───────────────
+-- ─────────────── Notification (auto-fit lebar) ───────────────
 local NotifGui, NotifHolder
 local NotifCounter = 0
 local ActiveNotifs, NotifQueue = {}, {}
+
+local function NotifWidth()
+  local vp = GetViewport()
+  return math.min(CONFIG.Notification.Width, math.max(200, vp.X - 32))
+end
 
 local function EnsureNotifHolder()
   if NotifGui and NotifGui.Parent and NotifHolder and NotifHolder.Parent then
@@ -638,8 +722,8 @@ local function EnsureNotifHolder()
   NotifHolder = Custom:Create("Frame", {
     Name = "Holder", AnchorPoint = Vector2.new(1, 1),
     BackgroundTransparency = 1, BorderSizePixel = 0,
-    Position = UDim2.new(1, -20, 1, -20),
-    Size = UDim2.new(0, CONFIG.Notification.Width, 1, -40),
+    Position = UDim2.new(1, -16, 1, -16),
+    Size = UDim2.new(0, NotifWidth(), 1, -32),
   }, NotifGui)
   Custom:Create("UIListLayout", {
     SortOrder = Enum.SortOrder.LayoutOrder,
@@ -649,6 +733,13 @@ local function EnsureNotifHolder()
   }, NotifHolder)
   return NotifHolder
 end
+
+-- lebar notifikasi ikut mengecil saat layar berubah
+OnViewportChange(function()
+  if NotifHolder and NotifHolder.Parent then
+    NotifHolder.Size = UDim2.new(0, NotifWidth(), 1, -32)
+  end
+end)
 
 local function ProcessNotifQueue()
   if #NotifQueue == 0 then return end
@@ -784,7 +875,7 @@ end
 
 function Speed_Library:Notify(Config) return Speed_Library:SetNotification(Config) end
 
--- ─────────────── Dialog ───────────────
+-- ─────────────── Dialog (auto-fit via UIScale) ───────────────
 function Speed_Library:Dialog(Config)
   local Title = tostring(Get(Config, 1, "Title", "Confirm"))
   local Content = tostring(Get(Config, 2, "Content", "Are you sure?"))
@@ -797,20 +888,33 @@ function Speed_Library:Dialog(Config)
     BorderSizePixel = 0, Size = UDim2.new(1, 0, 1, 0), ZIndex = Z.Dialog,
   }, Gui)
 
+  local DW = 340
   local ok, cs = pcall(TextService.GetTextSize, TextService, Content, 13,
-    CONFIG.Font.Regular, Vector2.new(280, math.huge))
+    CONFIG.Font.Regular, Vector2.new(DW - 60, math.huge))
   if not ok then cs = Vector2.new(280, 40) end
   local H = math.max(160, math.floor(cs.Y) + 104)
 
   local Frame = Custom:Create("Frame", {
     BackgroundColor3 = CONFIG.Theme.Background, BackgroundTransparency = 0.02,
     BorderSizePixel = 0, AnchorPoint = Vector2.new(0.5, 0.5),
-    Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.fromOffset(330, H - 14),
+    Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.fromOffset(DW - 10, H - 14),
     ZIndex = Z.Dialog + 1,
   }, Overlay)
   Custom:Create("UICorner", { CornerRadius = UDim.new(0, 10) }, Frame)
   Custom:Create("UIStroke", { Color = CONFIG.Theme.Stroke, Thickness = 1.4, Transparency = 0.2 }, Frame)
   Themed(Frame, "BackgroundColor3", "Background")
+
+  -- v2.2: auto-fit di layar kecil
+  do
+    local vp = GetViewport()
+    local m = L.ScreenMargin
+    local s = math.min(1, (vp.X - m * 2) / DW, (vp.Y - m * 2) / H)
+    if s < 1 then
+      local sc = Instance.new("UIScale")
+      sc.Scale = s
+      sc.Parent = Frame
+    end
+  end
 
   Custom:Create("TextLabel", {
     Font = CONFIG.Font.Bold, Text = Title, TextColor3 = CONFIG.Theme.Text,
@@ -844,7 +948,7 @@ function Speed_Library:Dialog(Config)
 
   local function Close()
     Tween(Overlay, { BackgroundTransparency = 1 }, 0.12)
-    Tween(Frame, { Size = UDim2.fromOffset(320, H - 8) }, 0.12)
+    Tween(Frame, { Size = UDim2.fromOffset(DW - 20, H - 8) }, 0.12)
     task.delay(0.15, function() if Gui then Gui:Destroy() end end)
   end
 
@@ -877,11 +981,11 @@ function Speed_Library:Dialog(Config)
   end
 
   Tween(Overlay, { BackgroundTransparency = 0.5 }, 0.15)
-  Tween(Frame, { Size = UDim2.fromOffset(340, H) }, 0.18, Enum.EasingStyle.Back)
+  Tween(Frame, { Size = UDim2.fromOffset(DW, H) }, 0.18, Enum.EasingStyle.Back)
   PlaySound("Click")
 end
 
--- ─────────────── CreateWindow ───────────────
+-- ─────────────── CreateWindow (AUTO-FIT SIZING) ───────────────
 function Speed_Library:CreateWindow(Config)
   if Speed_Library.Unloaded then
     warn("[KingAkbarUI] Library sudah di-Destroy — re-execute script")
@@ -891,10 +995,35 @@ function Speed_Library:CreateWindow(Config)
   local Title = tostring(Get(Config, 1, "Title", ""))
   local Description = tostring(Get(Config, 2, "Description", ""))
   local TabWidth = tonumber(Get(Config, 3, "TabWidth", CONFIG.Window.TabWidth)) or CONFIG.Window.TabWidth
-  TabWidth = math.max(TabWidth, 90)
-  local SizeUi = Get(Config, 4, "SizeUi", CONFIG.Window.Size)
-  if typeof(SizeUi) ~= "UDim2" then SizeUi = CONFIG.Window.Size end
-  SizeUi = UDim2.fromOffset(math.max(SizeUi.X.Offset, 460), math.max(SizeUi.Y.Offset, 300))
+
+  -- ═══ v2.2: HITUNG UKURAN WINDOW (auto-fit) ═══
+  local vp = GetViewport()
+  local reqW, reqH
+
+  local SizeUi = Get(Config, 4, "SizeUi", nil)
+  if typeof(SizeUi) == "UDim2" then
+    -- support Offset + Scale (Scale dihitung dari viewport)
+    reqW = SizeUi.X.Offset + SizeUi.X.Scale * vp.X
+    reqH = SizeUi.Y.Offset + SizeUi.Y.Scale * vp.Y
+  else
+    -- default pintar berdasarkan ukuran layar
+    if vp.X <= 620 then
+      -- layar sempit / mobile landscape
+      reqW = math.floor(vp.X * 0.94)
+      reqH = math.floor(vp.Y * 0.72)
+    elseif vp.X <= 900 then
+      reqW, reqH = CONFIG.Window.SmallSize.X.Offset, CONFIG.Window.SmallSize.Y.Offset
+    else
+      reqW = CONFIG.Window.Size.X.Offset
+      reqH = CONFIG.Window.Size.Y.Offset
+    end
+  end
+
+  -- fit: min dibatasi layar, max 92% layar, jaga rasio
+  local W, H = FitWindowWH(reqW, reqH)
+
+  -- TabWidth dibatasi max 38% lebar window
+  TabWidth = math.clamp(math.floor(TabWidth), 86, math.max(86, math.floor(W * 0.38)))
 
   local UseSearch = Get(Config, 5, "Search", false) == true
   local UseProfile = Get(Config, 6, "Profile", false) == true
@@ -921,7 +1050,7 @@ function Speed_Library:CreateWindow(Config)
     Name = "Holder", AnchorPoint = Vector2.new(0.5, 0.5),
     Position = UDim2.new(0.5, 0, 0.5, 0),
     BackgroundTransparency = 1, BorderSizePixel = 0,
-    Size = SizeUi, ZIndex = Z.Background,
+    Size = UDim2.fromOffset(W, H), ZIndex = Z.Background,
   }, WindowGui)
 
   local Main = Custom:Create("Frame", {
@@ -957,7 +1086,7 @@ function Speed_Library:CreateWindow(Config)
     table.insert(Speed_Library._bgImages, BgRef)
   end
 
-  -- ═══ TOPBAR (44px, tombol bulat) ═══
+  -- ═══ TOPBAR ═══
   local Top = Custom:Create("Frame", {
     Name = "Top", BackgroundTransparency = 1, BorderSizePixel = 0,
     Size = UDim2.new(1, 0, 0, L.TopbarHeight), ZIndex = Z.Control,
@@ -992,7 +1121,6 @@ function Speed_Library:CreateWindow(Config)
   }, Top)
   Themed(DescLabel, "TextColor3", "SubText")
 
-  -- Tombol kontrol bulat (min & close)
   local function TopButton(XOff, Glyph)
     local B = Custom:Create("TextButton", {
       Font = CONFIG.Font.Bold, Text = Glyph, TextSize = 16,
@@ -1024,8 +1152,7 @@ function Speed_Library:CreateWindow(Config)
     ZIndex = Z.Control + 1,
   }, Top)
 
-  -- garis pemisah topbar (gradient halus)
-  local TopLine = Custom:Create("Frame", {
+  Custom:Create("Frame", {
     AnchorPoint = Vector2.new(0.5, 0), BackgroundColor3 = CONFIG.Theme.Panel,
     BackgroundTransparency = 0.82, BorderSizePixel = 0,
     Position = UDim2.new(0.5, 0, 0, L.TopbarHeight), Size = UDim2.new(1, 0, 0, 1),
@@ -1097,7 +1224,7 @@ function Speed_Library:CreateWindow(Config)
 
     local shown = (Player.DisplayName ~= "" and Player.DisplayName) or Player.Name
     if HideName then shown = shown:sub(1, 3) .. "***" end
-    local WelcomeL = Custom:Create("TextLabel", {
+    Custom:Create("TextLabel", {
       Font = CONFIG.Font.Bold, Text = "Welcome,",
       TextColor3 = CONFIG.Theme.SubText, TextSize = 10,
       TextXAlignment = Enum.TextXAlignment.Left,
@@ -1125,7 +1252,7 @@ function Speed_Library:CreateWindow(Config)
   local Layers = Custom:Create("Frame", {
     Name = "Layers", BackgroundTransparency = 1, BorderSizePixel = 0,
     Position = UDim2.new(0, TabWidth + L.ContentGap, 0, SideY),
-    Size = UDim2.new(1, -(TabWidth + L.SidebarOffset + L.ContentGap + 10), 1, -(SideY + 10)),
+    Size = UDim2.new(1, -(TabWidth + L.ContentGap + 10), 1, -(SideY + 10)),
     ZIndex = Z.Control,
   }, Main)
 
@@ -1184,26 +1311,27 @@ function Speed_Library:CreateWindow(Config)
 
   MakeDraggable(Top, Holder, BindGlobal)
 
-  -- Clamp window ke viewport
-  local function ClampToViewport()
-    local cam = workspace.CurrentCamera
-    if not cam then return end
-    local vp = cam.ViewportSize
-    local size = Holder.AbsoluteSize
-    local pos = Holder.Position
-    local cx = pos.X.Scale * vp.X + pos.X.Offset
-    local cy = pos.Y.Scale * vp.Y + pos.Y.Offset
-    local hw, hh = size.X * 0.5, size.Y * 0.5
-    if vp.X >= size.X then cx = math.clamp(cx, hw, vp.X - hw) else cx = vp.X / 2 end
-    if vp.Y >= size.Y then cy = math.clamp(cy, hh, vp.Y - hh) else cy = vp.Y / 2 end
-    Holder.Position = UDim2.new(0, cx, 0, cy)
+  -- ═══ v2.2: REFIT saat layar berubah (resize + clamp posisi) ═══
+  local CurW, CurH = W, H
+  local function RefitWindow()
+    if Destroyed then return end
+    local vpNow = GetViewport()
+    local maxW = math.max(200, math.floor(vpNow.X * L.MaxScreenRatio))
+    local maxH = math.max(150, math.floor(vpNow.Y * L.MaxScreenRatio))
+    if CurW > maxW or CurH > maxH then
+      local s = math.min(maxW / CurW, maxH / CurH)
+      CurW, CurH = math.floor(CurW * s), math.floor(CurH * s)
+      Holder.Size = UDim2.fromOffset(CurW, CurH)
+    end
+    local p = Holder.Position
+    local cx = p.X.Scale * vpNow.X + p.X.Offset
+    local cy = p.Y.Scale * vpNow.Y + p.Y.Offset
+    local hw, hh = CurW / 2, CurH / 2
+    if vpNow.X >= CurW then cx = math.clamp(cx, hw, vpNow.X - hw) else cx = vpNow.X / 2 end
+    if vpNow.Y >= CurH then cy = math.clamp(cy, hh, vpNow.Y - hh) else cy = vpNow.Y / 2 end
+    Holder.Position = UDim2.new(0, math.floor(cx), 0, math.floor(cy))
   end
-  local function WatchCamera()
-    local cam = workspace.CurrentCamera
-    if cam then BindGlobal(cam:GetPropertyChangedSignal("ViewportSize"), ClampToViewport) end
-  end
-  WatchCamera()
-  BindGlobal(workspace:GetPropertyChangedSignal("CurrentCamera"), WatchCamera)
+  OnViewportChange(RefitWindow)
 
   -- Registry keybind (satu listener utk semua)
   local Keybinds, ListeningKeybind = {}, nil
@@ -1379,28 +1507,22 @@ function Speed_Library:CreateWindow(Config)
       }, Tab)
     end
 
-    -- indikator accent kiri
     local Bar = Custom:Create("Frame", {
       Name = "ChooseFrame", AnchorPoint = Vector2.new(0, 0.5),
       BackgroundColor3 = CONFIG.Theme.Primary, BackgroundTransparency = 1,
       BorderSizePixel = 0, Position = UDim2.new(0, 4, 0.5, 0),
       Size = UDim2.new(0, 3, 0, 0), ZIndex = Z.Control + 1,
     }, Tab)
-    local BarStroke = Custom:Create("UIStroke", {
-      Color = CONFIG.Theme.Primary, Thickness = 0, Transparency = 1,
-    }, Bar)
     Custom:Create("UICorner", { CornerRadius = UDim.new(1, 0) }, Bar)
     Themed(Bar, "BackgroundColor3", "Primary")
 
     local TabObj = { Name = Name, Frame = Tab, Page = Page, Bar = Bar, Label = TabLabel }
     table.insert(AllTabs, TabObj)
 
-    -- theme runtime: redraw visual tab sesuai state aktif
     Themed(Tab, function()
       if CurrentTab == TabObj then ApplyTabVisual(TabObj, true, true) end
     end, "Primary")
 
-    -- hover utk tab non-aktif
     TabButton.MouseEnter:Connect(function()
       if CurrentTab ~= TabObj then
         Tween(Tab, { BackgroundTransparency = 0.96 }, 0.12)
@@ -1483,7 +1605,7 @@ function Speed_Library:CreateWindow(Config)
         Size = UDim2.new(0, 0, 0, 2), ZIndex = Z.Base,
       }, Section)
       Custom:Create("UICorner", {}, SectionDecide)
-      local DivideGradient = Custom:Create("UIGradient", {
+      Custom:Create("UIGradient", {
         Color = ColorSequence.new {
           ColorSequenceKeypoint.new(0, CONFIG.Theme.Background),
           ColorSequenceKeypoint.new(0.5, CONFIG.Theme.Primary),
@@ -1602,7 +1724,7 @@ function Speed_Library:CreateWindow(Config)
           BorderSizePixel = 0, Size = UDim2.new(1, 0, 1, 0), ZIndex = Z.Control,
         }, Base.Frame)
         if type(Icon) == "string" and Icon ~= "" then
-          local Ico = Custom:Create("ImageLabel", {
+          Custom:Create("ImageLabel", {
             Image = Icon, AnchorPoint = Vector2.new(1, 0.5),
             BackgroundTransparency = 1, BorderSizePixel = 0,
             Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(24, 24),
@@ -1621,7 +1743,7 @@ function Speed_Library:CreateWindow(Config)
         return F
       end
 
-      -- ── Toggle (iOS style 40x20) ──
+      -- ── Toggle ──
       function Item:AddToggle(T)
         local Title = Get(T, 1, "Title", "")
         local Content = Get(T, 2, "Content", "")
@@ -1654,7 +1776,7 @@ function Speed_Library:CreateWindow(Config)
           Size = UDim2.fromOffset(L.ToggleKnob, L.ToggleKnob), ZIndex = Z.Control,
         }, Track)
         Custom:Create("UICorner", { CornerRadius = UDim.new(1, 0) }, Knob)
-        local KnobStroke = Custom:Create("UIStroke", {
+        Custom:Create("UIStroke", {
           Color = CONFIG.Theme.Stroke, Thickness = 1, Transparency = 0.5,
         }, Knob)
 
@@ -1693,7 +1815,7 @@ function Speed_Library:CreateWindow(Config)
         return F
       end
 
-      -- ── Slider (kotak nilai + track fill + knob) ──
+      -- ── Slider ──
       function Item:AddSlider(S)
         local Title = Get(S, 1, "Title", "")
         local Content = Get(S, 2, "Content", "")
@@ -1737,7 +1859,7 @@ function Speed_Library:CreateWindow(Config)
         AttachTooltipOpt(Base.Frame, Get(S, nil, "Tooltip", ""))
 
         Base.Apply = function(h)
-          Base.Frame.Size = UDim2.new(1, 0, 0, h + 18) -- ruang track di bawah
+          Base.Frame.Size = UDim2.new(1, 0, 0, h + 18)
         end
         Base.Refit()
 
@@ -1882,7 +2004,7 @@ function Speed_Library:CreateWindow(Config)
           ClipsDescendants = true,
         }, Base.Frame)
         Custom:Create("UICorner", { CornerRadius = UDim.new(0, 5) }, Box)
-        local BoxStroke = Custom:Create("UIStroke", {
+        Custom:Create("UIStroke", {
           Color = CONFIG.Theme.Stroke, Thickness = 1, Transparency = 0.5,
         }, Box)
         Custom:Create("UIPadding", { PaddingLeft = UDim.new(0, 8) }, Box)
@@ -1941,7 +2063,7 @@ function Speed_Library:CreateWindow(Config)
           TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
         }, Base.Frame)
         Custom:Create("UICorner", { CornerRadius = UDim.new(0, 5) }, DropBtn)
-        local DropStroke = Custom:Create("UIStroke", {
+        Custom:Create("UIStroke", {
           Color = CONFIG.Theme.Stroke, Thickness = 1, Transparency = 0.5,
         }, DropBtn)
         Custom:Create("UIPadding", { PaddingLeft = UDim.new(0, 9), PaddingRight = UDim.new(0, 18) }, DropBtn)
@@ -2151,7 +2273,7 @@ function Speed_Library:CreateWindow(Config)
           Size = UDim2.fromOffset(L.KeyW, L.KeyH), ZIndex = Z.Content,
         }, Base.Frame)
         Custom:Create("UICorner", { CornerRadius = UDim.new(0, 5) }, KeyBtn)
-        local KeyStroke = Custom:Create("UIStroke", {
+        Custom:Create("UIStroke", {
           Color = CONFIG.Theme.Stroke, Thickness = 1, Transparency = 0.5,
         }, KeyBtn)
 
@@ -2197,7 +2319,7 @@ function Speed_Library:CreateWindow(Config)
         return F
       end
 
-      -- ── ColorPicker ──
+      -- ── ColorPicker (auto-fit via UIScale) ──
       function Item:AddColorPicker(C)
         local Title = Get(C, 1, "Title", "")
         local Content = Get(C, 2, "Content", "")
@@ -2243,14 +2365,28 @@ function Speed_Library:CreateWindow(Config)
             if ok and hh then h, s, v = hh, ss, vv end
           end
 
+          local PW, PH = 238, (Presets and 230 or 200)
+
           local Frame = Custom:Create("Frame", {
             Name = "Picker", BackgroundColor3 = CONFIG.Theme.Background,
             BackgroundTransparency = 0.02, BorderSizePixel = 0,
             AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0),
-            Size = UDim2.fromOffset(238, Presets and 230 or 200), ZIndex = Z.Popup,
+            Size = UDim2.fromOffset(PW, PH), ZIndex = Z.Popup,
           }, gui)
           Custom:Create("UICorner", { CornerRadius = UDim.new(0, 10) }, Frame)
           Custom:Create("UIStroke", { Color = CONFIG.Theme.Stroke, Thickness = 1.4, Transparency = 0.2 }, Frame)
+
+          -- v2.2: auto-fit di layar kecil
+          do
+            local vpNow = GetViewport()
+            local m = L.ScreenMargin
+            local ps = math.min(1, (vpNow.X - m * 2) / PW, (vpNow.Y - m * 2) / PH)
+            if ps < 1 then
+              local sc = Instance.new("UIScale")
+              sc.Scale = ps
+              sc.Parent = Frame
+            end
+          end
 
           local Back = Custom:Create("TextButton", {
             Text = "", BackgroundTransparency = 1, BorderSizePixel = 0,
