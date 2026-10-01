@@ -133,4 +133,16 @@ Themes.Sunset = {
   LineColor  = Color3.fromRGB(200, 100, 50),
 }
 
+Themes.Violet = {
+  Primary    = Color3.fromRGB(168, 120, 255),
+  Panel      = Color3.fromRGB(255, 255, 255),
+  Background = Color3.fromRGB(16, 14, 22),
+  Secondary  = Color3.fromRGB(32, 28, 46),
+  Text       = Color3.fromRGB(255, 255, 255),
+  SubText    = Color3.fromRGB(150, 145, 175),
+  Stroke     = Color3.fromRGB(95, 75, 150),
+  Divider    = Color3.fromRGB(70, 60, 105),
+  LineColor  = Color3.fromRGB(110, 90, 165),
+}
+
 return Themes
