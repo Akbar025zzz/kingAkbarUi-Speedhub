@@ -1,55 +1,25 @@
 # 👑 King Akbar UI
 
-> Modern, customizable UI library untuk Roblox — dibikin buat scripting hub & tool.
+> Modern, customizable UI library untuk Roblox — dibuat untuk scripting hub & tool.
 
 ![Lua](https://img.shields.io/badge/Lua-5.1-blue)
 ![Roblox](https://img.shields.io/badge/Roblox-Exploit-red)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/version-1.6-blueviolet)
-
----
-
-## 📑 Daftar Isi
-
-- [Fitur](#-fitur)
-- [Instalasi](#-instalasi)
-- [Quick Start](#-quick-start)
-- [Komponen](#-komponen)
-  - [Window](#-window)
-  - [Tab](#-tab)
-  - [Section](#-section)
-  - [Item Components](#-item-components)
-- [Tema](#-tema)
-  - [Preset Tema](#-preset-tema)
-  - [Live Theme Switching](#-live-theme-switching)
-  - [Custom Theme](#-custom-theme)
-  - [themes.lua (Extended)](#-themeslua-extended)
-- [Auto-Save](#-auto-save)
-- [Wrapper (FuncsV3)](#-wrapper-funcsv3)
-- [API Reference](#-api-reference)
-- [Contoh Lengkap](#-contoh-lengkap)
-- [Tips & Troubleshooting](#-tips--troubleshooting)
-- [Changelog](#-changelog)
-- [Struktur Repo](#-struktur-repo)
-- [License](#-license)
+![Version](https://img.shields.io/badge/version-1.3-blueviolet)
 
 ---
 
 ## ✨ Fitur
 
-| Fitur | Deskripsi |
-|---|---|
-| 🎨 **Theme Registry** | 17+ preset tema siap pakai + **live switching** tanpa recreate UI |
-| 💾 **Auto-Save** | Toggle, slider, input, dropdown otomatis tersimpan & load |
-| 📦 **Komponen Lengkap** | Button, Toggle, Slider, Input, Dropdown (multi + search), Panel |
-| 🔄 **Dynamic Dropdown** | Update daftar opsi kapan saja (contoh: scan garasi kendaraan) |
-| 🖼️ **Background Image** | Support image + tint overlay |
-| 🪟 **Auto-Center** | Window selalu center di semua device (PC & mobile) |
-| 🔔 **Notification** | Sistem notifikasi sliding dengan close button |
-| 🖱️ **Draggable** | Window & floating button bisa dipindah |
-| 📱 **Touch Support** | Optimized buat mobile |
-| 🎯 **Anti-AFK** | Otomatis, bisa dimatikan |
-| 🧹 **Anti-Dup** | Execute ulang aman, UI lama dibersihkan otomatis |
+- 🎨 **Fully customizable** — ganti warna, font, ukuran, background, icon tanpa edit source
+- 🖼️ **Background image support**
+- 🪟 **Window auto-center** di semua device (PC & mobile)
+- 📦 **Komponen lengkap** — Button, Toggle, Slider, Input, Dropdown (multi + search), Panel
+- 🔔 **Notification system**
+- 🖱️ **Draggable** window & floating button
+- 📱 **Touch support** (mobile-friendly)
+- 🎯 **Anti-AFK** otomatis
+- 🎨 **10 preset tema** siap pakai
 
 ---
 
@@ -73,296 +43,52 @@ git clone https://github.com/Akbar025zzz/kingAkbarUi-Speedhub.git
 
 ## ⚡ Quick Start
 
-Contoh paling minimal — 30 detik langsung jalan:
-
 ```lua
 local Library = loadstring(game:HttpGet(
   "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/init.lua"
 ))()
 
--- 1. Buat Window
+-- Buat Window
 local Window = Library:CreateWindow({
-  "My Hub",           -- Title
-  "v1.0",             -- Description
-  100,                -- Tab Width
-  UDim2.fromOffset(500, 320),  -- Size
+  Title = "My Hub",
+  Description = "v1.0",
 })
 
--- 2. Buat Tab
+-- Buat Tab
 local Tab = Window:CreateTab({ "Main", "rbxassetid://7734010488" })
 
--- 3. Buat Section
-local Section = Tab:AddSection("Farming", true)   -- true = open by default
+-- Buat Section
+local Section = Tab:AddSection("Farming", true)
 
--- 4. Tambah Toggle
+-- Tambah Toggle
 Section:AddToggle({
-  "Auto Farm",                 -- Title
-  "Aktifkan auto farming",     -- Content
-  false,                       -- Default
-  function(state)              -- Callback
+  Title    = "Auto Farm",
+  Content  = "Aktifkan auto farming",
+  Default  = false,
+  Callback = function(state)
     print("Auto Farm:", state)
   end,
 })
 
--- 5. Tambah Button
+-- Tambah Button
 Section:AddButton({
-  "Reset Character",
-  "Klik untuk reset",
-  "rbxassetid://7734010488",   -- Icon
-  function()
+  Title    = "Reset Character",
+  Content  = "Klik untuk reset",
+  Callback = function()
     Library:SetNotification({
-      "Success", "•", "Character di-reset"
+      Title       = "Success",
+      Description = "•",
+      Content     = "Character di-reset",
     })
   end,
 })
-
--- 6. Notif sambutan
-Library:SetNotification({ "King Akbar", "Loaded", "Script berhasil dimuat 🚀" })
 ```
 
 ---
 
-## 🧩 Komponen
+## 🎨 Customization
 
-### 🔹 Window
-
-```lua
-local Window = Library:CreateWindow({
-  "My Hub",                    -- Title
-  "v1.0",                      -- Description
-  100,                         -- Tab Width (opsional)
-  UDim2.fromOffset(500, 320),  -- Size (opsional)
-})
-```
-
-Format array `{ Title, Description, TabWidth, SizeUi }` atau named:
-```lua
-Library:CreateWindow({
-  Title = "My Hub",
-  Description = "v1.0",
-  TabWidth = 100,
-  SizeUi = UDim2.fromOffset(500, 320),
-})
-```
-
-**Method:**
-| Method | Deskripsi |
-|---|---|
-| `Window:Show()` | Tampilkan window |
-| `Window:Hide()` | Sembunyikan (muncul floating button) |
-| `Window:Toggle()` | Toggle show/hide |
-| `Window:Destroy()` | Tutup permanen + flush save |
-
----
-
-### 🔹 Tab
-
-```lua
-local Tab = Window:CreateTab({
-  "Main",                       -- Nama tab
-  "rbxassetid://7734010488",    -- Icon (opsional)
-})
-```
-
----
-
-### 🔹 Section
-
-```lua
-local Section = Tab:AddSection("Farming", true)
-```
-- Argumen 2 = `true` → section langsung terbuka
-- Argumen 2 = `false` / kosong → section tertutup default
-
----
-
-### 🔹 Item Components
-
-Semua item bisa pakai **format array** atau **named table**.
-
-#### 📌 `Section:AddButton(config)`
-
-```lua
-Section:AddButton({
-  "Reset",                     -- Title
-  "Reset karakter",            -- Content
-  "rbxassetid://7734010488",   -- Icon
-  function()                   -- Callback
-    print("clicked")
-  end,
-})
-```
-
-#### 📌 `Section:AddToggle(config)`
-
-```lua
-local MyToggle = Section:AddToggle({
-  "Auto Farm",
-  "Farm otomatis",
-  false,                       -- Default state
-  function(state)              -- Callback(value)
-    print("Auto Farm:", state)
-  end,
-  "autofarm_flag",             -- Flag (opsional, buat auto-save key)
-})
-
-MyToggle:Set(true)             -- Set manual
-print(MyToggle.Value)          -- Baca value
-```
-
-#### 📌 `Section:AddSlider(config)`
-
-```lua
-local MySlider = Section:AddSlider({
-  "WalkSpeed",                 -- Title
-  "",                          -- Content
-  1,                           -- Increment
-  16,                          -- Min
-  300,                         -- Max
-  16,                          -- Default
-  function(value)              -- Callback(value)
-    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = value
-  end,
-  "walkspeed_flag",            -- Flag (opsional)
-})
-
-MySlider:Set(100, true)        -- Set + fire callback
-```
-
-#### 📌 `Section:AddInput(config)`
-
-```lua
-local MyInput = Section:AddInput({
-  "Webhook URL",
-  "Discord webhook",
-  "",                          -- Default text
-  function(text)               -- Callback(text)
-    print("Input:", text)
-  end,
-  "webhook_flag",              -- Flag (opsional)
-})
-```
-
-#### 📌 `Section:AddDropdown(config)`
-
-```lua
-local MyDrop = Section:AddDropdown({
-  "Pilih Motor",               -- Title
-  "Kendaraan yang dipakai",    -- Content
-  false,                       -- Multi-select?
-  { "Vespa", "Supra", "Ninja" },   -- Options
-  { "Vespa" },                 -- Default selected
-  function(picked)             -- Callback(table)
-    print("Picked:", picked[1])
-  end,
-  "motor_flag",                -- Flag (opsional)
-})
-```
-
-**Method dropdown:**
-| Method | Deskripsi |
-|---|---|
-| `Drop:Set(value)` | Set pilihan (string atau table) |
-| `Drop:GetValue()` | Ambil pilihan aktif (table) |
-| `Drop:GetOptions()` | Ambil daftar opsi |
-| `Drop:SetOptions(list, selecting?, opts?)` | Ganti seluruh opsi (dynamic) |
-| `Drop:SetPlaceholder("text")` | Ubah placeholder |
-| `Drop:AddOption("item")` | Tambah 1 opsi |
-| `Drop:Clear()` | Hapus semua opsi |
-
-**Contoh dynamic update** (kasus scan garasi):
-```lua
-MyDrop:SetPlaceholder("Pindai garasi...")
-
--- Setelah scan selesai:
-MyDrop:SetOptions(
-  { "Vespa", "Supra", "Ninja" },
-  nil,                                    -- nil = auto-keep selection
-  { KeepSelection = true, NoCallback = true }
-)
-MyDrop:SetPlaceholder("Pilih motor...")
-```
-
-#### 📌 `Section:AddParagraph(config)`
-
-```lua
-Section:AddParagraph({
-  "Info",
-  "Ini paragraf panjang yang auto-wrap dan auto-height.",
-})
-```
-
-#### 📌 `Section:AddSeperator(title)`
-
-```lua
-Section:AddSeperator("─── Advanced ───")
-```
-
-#### 📌 `Section:AddLine()`
-
-Garis pemisah tipis.
-```lua
-Section:AddLine()
-```
-
-#### 📌 `Section:AddPanel(config)`
-
-Panel collapsible dengan sub-item:
-
-```lua
-local Panel = Section:AddPanel({ "Advanced Options", "Klik untuk buka" })
-
-Panel:AddButton({ "Reset All", function() print("reset") end })
-Panel:AddToggle({ "Debug Mode", false, function(v) print(v) end })
-```
-
----
-
-## 🎨 Tema
-
-### 🎯 Preset Tema
-
-10 preset bawaan:
-
-```
-Dark, Neon, Cyberpunk, BloodRed, Gold,
-Purple, Ocean, Light, Matrix, Sunset
-```
-
-```lua
--- SEBELUM CreateWindow
-Library:SetPreset("Cyberpunk")
-
-local Window = Library:CreateWindow({ "My Hub", "v1.0" })
-
--- Cek daftar lengkap
-print(table.concat(Library:GetThemes(), ", "))
-```
-
-### 🔄 Live Theme Switching
-
-Ganti tema **kapan saja** — semua elemen langsung update tanpa recreate UI:
-
-```lua
-local Window = Library:CreateWindow({ "My Hub", "v1.0" })
-local Tab = Window:CreateTab({ "Main", "" })
-local Section = Tab:AddSection("Farm", true)
-
-Section:AddToggle({ "Auto Farm", "", false, function(v) end })
-Section:AddSlider({ "Speed", "", 1, 16, 300, 16, function(v) end })
-
--- Ganti tema runtime
-task.wait(3)
-Library:SetPreset("Neon")     -- ✅ semua berubah live
-
-task.wait(3)
-Library:SetPreset("Light")    -- ✅ ganti lagi
-
-task.wait(3)
-Library:SetPreset("BloodRed") -- ✅ smooth
-```
-
-### 🎨 Custom Theme
+### Ganti Tema
 
 ```lua
 Library:SetTheme({
@@ -372,403 +98,160 @@ Library:SetTheme({
   Text       = Color3.fromRGB(255, 255, 255),
   SubText    = Color3.fromRGB(150, 150, 150),
   Stroke     = Color3.fromRGB(60, 60, 70),
-  Divider    = Color3.fromRGB(80, 80, 80),
-  LineColor  = Color3.fromRGB(110, 110, 110),
-  Panel      = Color3.fromRGB(255, 255, 255),   -- overlay item
-  BackgroundTint = Color3.fromRGB(0, 0, 0),
-  BackgroundTintTrans = 0.3,
 })
 ```
 
-### 🧰 themes.lua (Extended)
-
-File `themes.lua` (v2) menyediakan **7 tema bonus** + helper utility:
+### Pakai Preset Tema
 
 ```lua
-local Themes = loadstring(game:HttpGet("URL/themes.lua"))()
+local Themes = loadstring(game:HttpGet(
+  "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/themes.lua"
+))()
 
--- Daftarkan semua tema bonus ke library
-Themes.RegisterAll(Library)
-Library:SetPreset("MidnightBlue")   -- sekarang tersedia
+Library:SetTheme(Themes.Neon)
+-- Tersedia: Dark, Neon, Cyberpunk, BloodRed, Gold,
+--           Purple, Ocean, Light, Matrix, Sunset
 ```
 
-Tema bonus: `MidnightBlue, Rose, Mono, Forest, Void, Ice, Fire`
-
-**Helper utility:**
-
-| Function | Deskripsi |
-|---|---|
-| `Themes.New({Base="Dark", Primary=...})` | Bikin theme inherit dari base |
-| `Themes.FromColor(color, "dark"/"light")` | Auto-generate theme dari 1 warna |
-| `Themes.Blend(A, B, t)` | Blend 2 theme (t: 0..1) |
-| `Themes.Get(name)` | Ambil theme by name |
-| `Themes.List()` | List semua nama theme |
-| `Themes.Random()` | Theme random |
-| `Themes.Preview(theme)` | Print warna + hex code |
-| `Themes.Validate(theme)` | Cek kelengkapan theme |
-
-**Contoh generate dari 1 warna:**
-```lua
-Library:SetTheme(Themes.FromColor(Color3.fromRGB(255, 100, 180), "dark"))
-```
-
-**Contoh blend:**
-```lua
-local Blended = Themes.Blend(Themes.Neon, Themes.Cyberpunk, 0.5)
-Library:SetTheme(Blended)
-```
-
----
-
-## 💾 Auto-Save
-
-Toggle, slider, input, dan dropdown **otomatis tersimpan & load** saat script di-execute ulang.
-
-**Cara kerja:**
-1. Execute script → baca file JSON
-2. Bikin item → cek apakah ada value tersimpan
-3. User ganti value → auto-save (debounce 0.6 detik)
-4. Tutup UI → flush save
-5. Execute ulang → semua value balik ke posisi terakhir ✅
-
-**File lokasi:** `workspace/KingAkbarUI_<PlaceId>.json`
-
-**API:**
-```lua
-Library:SetAutoSave(true)       -- Aktif/matikan (default: true)
-Library:SaveNow()               -- Paksa save sekarang
-Library:ClearSave()             -- Hapus semua data tersimpan
-Library:SetSaveFile("custom")   -- Ganti nama file (SEBELUM CreateWindow)
-Library:GetSaveData()           -- Lihat isi save (table)
-```
-
-**Contoh:**
-```lua
-Library:SetSaveFile("MyFarmSettings")   -- sebelum CreateWindow
-
-local Window = Library:CreateWindow({ "My Hub", "v1.0" })
-local Tab = Window:CreateTab({ "Main", "" })
-local Section = Tab:AddSection("Farm", true)
-
--- Ini otomatis ke-save & load
-Section:AddToggle({ "Auto Farm", "", false, function(v) end })
-Section:AddSlider({ "Speed", "", 1, 16, 300, 16, function(v) end })
-
--- Tombol clear semua save
-Section:AddButton({ "Reset Settings", "", "", function()
-  Library:ClearSave()
-  Library:SetNotification({ "Save", "All reset", "" })
-end })
-```
-
-> **Flag** — kalau punya 2 item dengan judul sama di section berbeda, tetap aman karena ada prefix namespace. Flag cuma dipakai kalau perlu key custom (misal judul sering berubah):
-> ```lua
-> Section:AddToggle({ "Anti AFK", "", true, function(v) end, "antiafk_v1" })
-> ```
-
-> **Catatan:** executor tanpa `writefile`/`readfile` → auto-fallback ke memory (persist antar execute dalam 1 sesi, hilang kalau Roblox di-restart).
-
----
-
-## 🔧 Wrapper (FuncsV3)
-
-Wrapper bikin kode lebih pendek + auto-save via storeFn eksternal.
+### Ganti Font
 
 ```lua
-local FuncsV3 = loadstring(game:HttpGet("URL/wrapper.lua"))()
-
--- Setup storage
-getgenv().MyConfig = getgenv().MyConfig or {}
-FuncsV3:SetTable(getgenv().MyConfig, function(cfg)
-  -- opsional: simpan ke file
-  writefile("MyHub.json", game:GetService("HttpService"):JSONEncode(cfg))
-end)
-
--- Pakai "Save" buat auto-load & auto-save
-FuncsV3:Toggle(Section, "Auto Farm", "Farm otomatis", "Save", function(v)
-  print(v)
-end)
-
-FuncsV3:Slider(Section, "Speed", "", 16, 300, "Save", function(v)
-  print(v)
-end)
-
-FuncsV3:Dropdown(Section, "Motor", "", false,
-  { "Vespa", "Supra" }, "Save", function(v) end)
-
-FuncsV3:Textbox(Section, "Webhook", "", "Save", function(t) end)
-
--- Flush manual
-FuncsV3:Flush()
+Library:SetFont({
+  Bold    = Enum.Font.FredokaOne,
+  Regular = Enum.Font.Gotham,
+})
 ```
 
-**Kapan pakai wrapper vs auto-save built-in?**
-| | Wrapper | Built-in Auto-Save |
-|---|---|---|
-| Cocok untuk | Library v1.3 ke bawah | Library v1.5+ |
-| Key pattern | Judul item | Namespace + judul |
-| Fleksibel | Bisa custom storeFn | Fixed JSON file |
+### Ganti Background Image
 
-> ⚠️ **Jangan pakai keduanya sekaligus** — bisa double-write.
+```lua
+local Cfg = Library:GetConfig()
+Cfg.Window.BackgroundImage        = "rbxassetid://7838809599"
+Cfg.Window.BackgroundTransparency = 0.5
+Cfg.Window.BackgroundTint         = Color3.fromRGB(0, 0, 0)
+Cfg.Window.BackgroundTintTrans    = 0.3
+```
+
+### Ganti Icon Floating Button
+
+```lua
+local Cfg = Library:GetConfig()
+Cfg.Assets.FloatingButton = "rbxassetid://91115084979317"
+```
+
+### Ganti Ukuran Window
+
+```lua
+local Window = Library:CreateWindow({
+  Title    = "My Hub",
+  TabWidth = 110,
+  SizeUi   = UDim2.fromOffset(500, 320),
+})
+```
 
 ---
 
 ## 📖 API Reference
 
-### Window Methods
+### 🔹 `Library:CreateWindow(config)`
 
-| Method | Deskripsi |
+| Field | Type | Default | Deskripsi |
+|---|---|---|---|
+| `Title` | string | `""` | Judul window |
+| `Description` | string | `""` | Sub-judul |
+| `TabWidth` | number | `100` | Lebar panel tab |
+| `SizeUi` | UDim2 | `420x280` | Ukuran window |
+
+### 🔹 `Window:CreateTab({ Name, Icon })`
+
+| Param | Type | Deskripsi |
+|---|---|---|
+| `Name` | string | Nama tab |
+| `Icon` | string | `rbxassetid://...` |
+
+### 🔹 `Tab:AddSection(Title, OpenByDefault)`
+
+### 🔹 Item Components
+
+| Method | Field |
 |---|---|
-| `Window:Show()` | Tampilkan window |
-| `Window:Hide()` | Sembunyikan |
-| `Window:Toggle()` | Toggle visibility |
-| `Window:Destroy()` | Tutup permanen |
-| `Window:CreateTab({Name, Icon})` | Buat tab baru |
+| `AddButton` | `Title, Content, Icon, Callback` |
+| `AddToggle` | `Title, Content, Default, Callback(state)` |
+| `AddSlider` | `Title, Content, Increment, Min, Max, Default, Callback(value)` |
+| `AddInput` | `Title, Content, Default, Callback(text)` |
+| `AddDropdown` | `Title, Content, Multi, Options, Default, Callback(value)` |
+| `AddPanel` | `Title, Content` → sub: `AddButton`, `AddToggle` |
+| `AddParagraph` | `Title, Content` |
+| `AddSeperator` | `Title` |
+| `AddLine` | – |
 
-### Tab Methods
+### 🔹 `Library:SetNotification(config)`
 
-| Method | Deskripsi |
+| Field | Type | Default |
+|---|---|---|
+| `Title` | string | `""` |
+| `Description` | string | `""` |
+| `Content` | string | `""` |
+| `Time` | number | `0.5` |
+| `Delay` | number | `5` |
+
+### 🔹 Fungsi Tambahan
+
+| Objek | Method |
 |---|---|
-| `Tab:AddSection(Title, OpenDefault)` | Buat section |
+| `Window` | `Show()`, `Hide()`, `Toggle()`, `Destroy()` |
+| Semua item | `SetTitle(text)`, `SetContent(text)`, `SetVisible(bool)`, `Destroy()` |
+| Toggle | `Set(bool)` |
+| Slider | `Set(value, fire)` — `fire = true` memanggil callback |
+| Input | `Set(text)` |
+| Dropdown | `Set(value)`, `Refresh(list, selected)`, `AddOption(name)`, `Clear()` |
+| `Library` | `Notify(config)` (alias `SetNotification`), `Destroy()` |
 
-### Section Methods
-
-| Method | Deskripsi |
-|---|---|
-| `AddButton` | Button item |
-| `AddToggle` | Toggle item |
-| `AddSlider` | Slider item |
-| `AddInput` | Text input |
-| `AddDropdown` | Dropdown (multi + search) |
-| `AddPanel` | Collapsible panel |
-| `AddParagraph` | Paragraf teks |
-| `AddSeperator` | Divider dengan judul |
-| `AddLine` | Garis tipis |
-
-### Item Common Methods
-
-Semua item punya:
-- `SetTitle(text)`
-- `SetContent(text)`
-- `SetVisible(bool)`
-- `Destroy()`
-
-### Notification
-
-```lua
-Library:SetNotification({
-  "Title",          -- Judul
-  "Description",    -- Deskripsi (warna primary)
-  "Content",        -- Konten panjang (opsional)
-  0.5,              -- Animation time (opsional)
-  5,                -- Auto-close delay (opsional)
-})
-
--- Alias
-Library:Notify({ ... })
-```
-
-### Library API
-
-```lua
-Library:SetTheme(themeTable)         -- Custom theme
-Library:SetPreset("Neon")            -- Preset by name
-Library:GetThemes()                  -- List preset
-Library.Themes                       -- Akses table theme langsung
-Library:SetFont({ Bold=..., Regular=... })
-Library:GetConfig()                  -- Akses CONFIG global
-Library:SetAutoSave(bool)
-Library:SaveNow()
-Library:ClearSave()
-Library:SetSaveFile(name)
-Library:GetSaveData()
-Library:Destroy()
-```
-
-### Config Access
-
-```lua
-local Cfg = Library:GetConfig()
-
--- Background image
-Cfg.Window.BackgroundImage        = "rbxassetid://7838809599"
-Cfg.Window.BackgroundTransparency = 0.5
-
--- Floating button icon
-Cfg.Assets.FloatingButton = "rbxassetid://91115084979317"
-
--- Anti-AFK
-Cfg.Behavior.AntiAFK = false
-```
+> Argumen bisa dipakai dalam format array (`{ "Title", "Content", ... }`) **atau** bernama (`{ Title = "..." }`).
 
 ---
 
-## 📝 Contoh Lengkap
+## 🔥 Wrapper (Auto-Save)
 
-### Contoh 1 — Basic Farm Hub
-
-```lua
-local Library = loadstring(game:HttpGet("URL_INIT"))()
-
-local Window = Library:CreateWindow({ "Farm Hub", "v1.0", 110, UDim2.fromOffset(520, 320) })
-local Tab = Window:CreateTab({ "Main", "rbxassetid://7734010488" })
-local Section = Tab:AddSection("Auto Farm", true)
-
-Section:AddToggle({
-  "Enable Farm", "Auto farm aktif", false,
-  function(v) print("Farm:", v) end
-})
-
-Section:AddSlider({
-  "Radius", "Jarak farm", 5, 10, 200, 50,
-  function(v) print("Radius:", v) end
-})
-
-Section:AddButton({
-  "Refresh Target", "Scan ulang target", "rbxassetid://7734010488",
-  function() print("refreshed") end
-})
-
-Library:SetNotification({ "Farm Hub", "Loaded", "v1.0 ready 🚀" })
-```
-
-### Contoh 2 — Theme Switcher Tab
+Ada `wrapper.lua` yang bikin pemakaian lebih simpel + auto-save config.
 
 ```lua
-local Library = loadstring(game:HttpGet("URL_INIT"))()
+local FuncsV3 = loadstring(game:HttpGet(
+  "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/wrapper.lua"
+))()
 
-local Window = Library:CreateWindow({ "Theme Demo", "v1.0" })
-local Tab = Window:CreateTab({ "Themes", "" })
-local Section = Tab:AddSection("Pilih Tema", true)
+getgenv().MyConfig = getgenv().MyConfig or {}
+FuncsV3:SetTable(getgenv().MyConfig)
 
-for _, name in ipairs(Library:GetThemes()) do
-  Section:AddButton({
-    name, "", "",
-    function()
-      Library:SetPreset(name)
-      Library:SetNotification({ "Theme", "Changed", name })
-    end,
-  })
-end
-```
-
-### Contoh 3 — Dynamic Dropdown (Scan Garasi)
-
-```lua
-local Library = loadstring(game:HttpGet("URL_INIT"))()
-
-local Window = Library:CreateWindow({ "Garage", "v1.0" })
-local Tab = Window:CreateTab({ "Kendaraan", "" })
-local Section = Tab:AddSection("Motor", true)
-
-local MotorDrop = Section:AddDropdown({
-  "Pilih Motor", "Kendaraan yang dipakai",
-  false, {}, {},
-  function(picked)
-    if #picked > 0 then print("Selected:", picked[1]) end
-  end,
-})
-MotorDrop:SetPlaceholder("Pindai garasi...")
-
-local function ScanGarage()
-  MotorDrop:SetPlaceholder("Memindai...")
-  task.wait(1.5)
-
-  local hasil = { "Vespa", "Supra", "Ninja" }   -- simulasi hasil scan
-
-  MotorDrop:SetOptions(hasil, nil,
-    { KeepSelection = true, NoCallback = true })
-  MotorDrop:SetPlaceholder("Pilih motor...")
-
-  Library:SetNotification({
-    "Garasi Terdeteksi",
-    "Ditemukan " .. #hasil .. " kendaraan!",
-    table.concat(hasil, ", ")
-  })
-end
-
-Section:AddButton({
-  "Refresh Garasi", "Scan ulang", "",
-  function() ScanGarage() end
-})
-
-task.spawn(function()
-  task.wait(2)
-  ScanGarage()
+FuncsV3:Toggle(Section, "Auto Farm", "Deskripsi", "Save", function(v)
+  print(v)
 end)
 ```
 
-### Contoh 4 — Auto-Save + Custom Save File
+**Magic value `"Save"`** → otomatis load dari config & auto-save saat berubah.
+
+- Hanya `"Save"` yang memuat nilai tersimpan; `Default` eksplisit selalu dipakai apa adanya.
+- Kunci simpanan = **nama item**, jadi pakai nama yang unik di seluruh hub.
+- Penyimpanan di-debounce (0.5 detik) agar tidak menulis berulang-ulang.
+- Isi `storeFn` bila ingin menulis ke file:
 
 ```lua
-local Library = loadstring(game:HttpGet("URL_INIT"))()
-
-Library:SetSaveFile("MyFarmSettings")   -- SEBELUM CreateWindow
-
-local Window = Library:CreateWindow({ "Farm", "v1.0" })
-local Tab = Window:CreateTab({ "Main", "" })
-local Section = Tab:AddSection("Farm", true)
-
--- Semua ini otomatis persist
-Section:AddToggle({ "Auto Farm", "", false, function(v) end })
-Section:AddSlider({ "Speed", "", 1, 16, 300, 16, function(v) end })
-Section:AddInput({ "Webhook", "", "", function(v) end })
-
-Section:AddButton({ "Reset Save", "", "", function()
-  Library:ClearSave()
-  Library:SetNotification({ "Save", "All data cleared", "" })
-end })
+FuncsV3:SetTable(getgenv().MyConfig, function(cfg)
+  writefile("MyHub.json", game:GetService("HttpService"):JSONEncode(cfg))
+end)
 ```
+- `FuncsV3:Slider(Tab, Name, Content, Min, Max, Default, Callback, Increment)` — `Increment` opsional.
 
 ---
 
-## 💡 Tips & Troubleshooting
+## 📁 Contoh Lengkap
 
-### ✅ Best Practices
+Lihat folder [`examples/`](examples/) untuk referensi:
 
-- **Set tema SEBELUM `CreateWindow`** kalau mau semua elemen konsisten. Tapi **live switching** juga didukung setelah window dibuat.
-- Pakai **flag** untuk item dengan judul generik (mis. `"Speed"`, `"Enable"`) biar nggak konflik save.
-- **Light theme** → matikan background image biar nggak tertutup tint:
-  ```lua
-  Library:GetConfig().Window.BackgroundImage = ""
-  ```
-- **Background image** optimal di resolusi **1280×720** ke atas.
-- **Icon floating button** sebaiknya PNG transparan ukuran **128×128**.
-- Kalau `loadstring` gagal, cek URL raw — pakai `raw.githubusercontent.com`, bukan `github.com`.
-
-### 🐛 Troubleshooting
-
-| Masalah | Solusi |
-|---|---|
-| UI muncul dobel | Execute ulang aman, tapi pastikan versi library sama |
-| Save nggak jalan | Cek `writefile` support. Pakai executor yang support file IO |
-| Tema nggak berubah | Pastikan panggil `SetPreset` dengan nama yang ada di `Lib:GetThemes()` |
-| Slider berat di mobile | Kecilkan `Max` atau pakai `Increment` lebih besar |
-| Dropdown nggak ke-update | Pakai `SetOptions` bukan `Refresh` (yang lama reset callback) |
-
----
-
-## 📋 Changelog
-
-### v1.6 *(current)*
-- ✨ **Theme Registry built-in** (10 preset)
-- ✨ **Live theme switching** — ganti tema runtime tanpa recreate UI
-- ✨ **Auto-Save built-in** — toggle/slider/input/dropdown persist
-- ✨ **Dynamic Dropdown** — `SetOptions`, `SetPlaceholder`, `GetOptions`, `GetValue`
-- ✨ Tab kotak profesional (idle/active state berbeda)
-- 🐛 Fix `Time` & `Delay` di notification
-
-### v1.5
-- ✨ Auto-save internal + config file
-
-### v1.4
-- ✨ Dynamic dropdown refresh
-- ✨ Tab kotak
-
-### v1.3
-- 🎉 Initial release
-- Komponen dasar: Button, Toggle, Slider, Input, Dropdown, Panel
-- 10 preset tema
+- `basic.lua` — paling simpel
+- `with-save.lua` — pakai wrapper + save
+- `customize.lua` — ganti tema, font, background
+- `advanced.lua` — semua komponen
 
 ---
 
@@ -776,9 +259,9 @@ end })
 
 ```
 kingAkbarUi-Speedhub/
-├── init.lua              ← library utama (v1.6)
-├── wrapper.lua           ← shortcut + auto-save eksternal
-├── themes.lua            ← extended themes (v2)
+├── init.lua              ← library utama
+├── wrapper.lua           ← shortcut + auto-save
+├── themes.lua            ← 10 preset tema
 ├── README.md
 ├── LICENSE
 └── examples/
@@ -790,9 +273,21 @@ kingAkbarUi-Speedhub/
 
 ---
 
-## 🤝 Kontribusi
+## 💡 Tips
 
-Pull request & issue welcome! Kalau nemu bug atau punya saran fitur, buka [issue](https://github.com/Akbar025zzz/kingAkbarUi-Speedhub/issues).
+- **Tema, font, background, dan icon floating button harus diatur SEBELUM `CreateWindow`** — elemen yang sudah dibuat tidak ikut berubah
+- Tema **Light**: matikan background image (`Library:GetConfig().Window.BackgroundImage = ""`) supaya tidak tertutup tint gelap
+- Menjalankan script dua kali aman: UI lama otomatis dibersihkan
+- **Background image** lebih bagus pakai resolusi **1280x720** ke atas
+- **Icon floating button** sebaiknya PNG transparan ukuran **128x128**
+- **Font custom** bisa pakai `rbxasset://fonts/...` atau asset ID sendiri
+- **Anti-AFK** bisa dimatikan via `Library:GetConfig().Behavior.AntiAFK = false`
+
+---
+
+## 🐛 Bug Report
+
+Buka [issue](https://github.com/Akbar025zzz/kingAkbarUi-Speedhub/issues) baru.
 
 ---
 
@@ -805,6 +300,3 @@ MIT — bebas dipakai, diubah, dan dibagikan. Lihat [LICENSE](LICENSE).
 ## 🙏 Credit
 
 Made with ❤️ by **King Akbar**
-
-- GitHub: [@Akbar025zzz](https://github.com/Akbar025zzz)
-- Repo: [kingAkbarUi-Speedhub](https://github.com/Akbar025zzz/kingAkbarUi-Speedhub)
