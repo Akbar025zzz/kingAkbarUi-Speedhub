@@ -38,8 +38,8 @@ local CONFIG = {
     Regular = Enum.Font.SourceSans,
   },
   Window = {
-    Size        = UDim2.fromOffset(550, 315),
-    TabWidth    = 120,
+    Size        = UDim2.fromOffset(420, 280),   -- compact
+    TabWidth    = 100,
     CornerRadius= 6,
   },
   Notification = {
@@ -136,8 +136,8 @@ local function OpenClose()
     BackgroundColor3 = Color3.fromRGB(0, 0, 0),
     BorderColor3 = Color3.fromRGB(255, 0, 0),
     BackgroundTransparency = 1,
-    Position = UDim2.new(0.1021, 0, 0.0743, 0),
-    Size = UDim2.new(0, 59, 0, 49),
+    Position = UDim2.new(0.85, 0, 0.05, 0),
+    Size = UDim2.new(0, 45, 0, 45),
     Image = CONFIG.Assets.FloatingButton,
     Visible = false,
     Name = "OpenCloseButton",
@@ -476,13 +476,15 @@ function Speed_Library:CreateWindow(Config)
     ResetOnSpawn = false,
   }, GetRoot())
 
+  -- ⚠️ FIX: Window auto-center via AnchorPoint
   local DropShadowHolder = Custom:Create("Frame", {
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = UDim2.new(0.5, 0, 0.5, 0),
     BackgroundTransparency = 1,
     BorderSizePixel = 0,
     Size = UDim2.new(0, 455, 0, 350),
     ZIndex = 0,
     Name = "DropShadowHolder",
-    Position = UDim2.new(0, (SpeedHubXGui.AbsoluteSize.X // 2 - 455 // 2), 0, (SpeedHubXGui.AbsoluteSize.Y // 2 - 350 // 2)),
   }, SpeedHubXGui)
 
   local DropShadow = Custom:Create("ImageLabel", {
