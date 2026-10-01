@@ -3,17 +3,8 @@
 ║    KING AKBAR UI — LOADER (SATU LINK, SEMUA FILE)    ║
 ║    github.com/Akbar025zzz/kingAkbarUi-Speedhub       ║
 ╚══════════════════════════════════════════════════════╝
-PAKAI (cukup satu baris):
-
-  local UI = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/main/loader.lua"
-  ))()
-
-Hasil:
-  UI.Lib      → library inti (CreateWindow, Notify, SetTheme...)
-  UI.Themes   → preset tema (Apply, Names...)
-  UI.FuncsV3  → wrapper auto-save (Toggle, Slider, ThemePicker...)
-  UI:QuickHub() → shortcut config + theme + window sekaligus
+CARA PAKAI (cukup satu baris):
+  local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/main/loader.lua"))()
 ]]
 
 local BASE = "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/main/"
@@ -40,13 +31,12 @@ function UI:Notify(title, desc, content)
 	return UI.Lib:SetNotification({ title, desc, content })
 end
 
--- ═══ Shortcut: auto-save + theme tersimpan + window ═══
+-- Shortcut: auto-save + theme tersimpan + window
 function UI:QuickHub(opts)
 	opts = type(opts) == "table" and opts or {}
 	local Http = game:GetService("HttpService")
 	local file = opts.File or "kingakbar_config.json"
 
-	-- muat config tersimpan
 	local cfg = {}
 	if isfile and isfile(file) then
 		local ok, d = pcall(readfile, file)
@@ -56,12 +46,11 @@ function UI:QuickHub(opts)
 		if writefile then writefile(file, Http:JSONEncode(t)) end
 	end)
 
-	-- theme sesuai save-an (WAJIB sebelum CreateWindow)
 	UI.FuncsV3:ApplySavedTheme(UI.Lib, UI.Themes, opts.Theme or "Dark")
 
 	local winCfg = opts.Window or {
-		opts.Title or "King Akbar", opts.Desc or "v1.5",
-		112, UDim2.fromOffset(460, 300),
+		opts.Title or "King Akbar Hub", opts.Desc or "v1.5",
+		112, UDim2.fromOffset(460, 300), true, true
 	}
 	return UI.Lib:CreateWindow(winCfg)
 end
