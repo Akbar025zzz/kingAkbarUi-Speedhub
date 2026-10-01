@@ -1,7 +1,16 @@
 --[[
   ╔══════════════════════════════════════════════════╗
   ║         KING AKBAR UI — FUNCSV3 WRAPPER          ║
-  ║                  v1.1 (FIXED)                    ║
+  ║       github.com/Akbar025zzz/kingAkbarUi-Speedhub ║
+  ║                                                  ║
+  ║  Shortcut untuk pemakaian library + auto-save    ║
+  ║  konfigurasi user.                               ║
+  ║                                                  ║
+  ║  Usage:                                          ║
+  ║    local FuncsV3 = loadstring(game:HttpGet(      ║
+  ║      "https://raw.githubusercontent.com/"        ║
+  ║      .."Akbar025zzz/kingAkbarUi-Speedhub/"       ║
+  ║      .."main/wrapper.lua"))()                    ║
   ╚══════════════════════════════════════════════════╝
 ]]
 
@@ -13,7 +22,6 @@ local FuncsV3 = {}
 local SaveConfig = nil
 local Store      = nil
 local AutoSave   = true
-local SavePending = false
 
 -- ───────────────────────────────────────────────────
 --  HELPERS
@@ -30,48 +38,36 @@ local function SafeGet(key, fallback)
   return v
 end
 
--- banding dua value (deep compare buat table)
-local function DeepEqual(a, b)
-  if a == b then return true end
-  if type(a) ~= "table" or type(b) ~= "table" then return false end
-  for k, v in pairs(a) do
-    if not DeepEqual(v, b[k]) then return false end
-  end
-  for k in pairs(b) do
-    if a[k] == nil then return false end
-  end
-  return true
-end
-
-local function DoStore()
-  if not AutoSave then return end
-  if type(Store) == "function" and type(SaveConfig) == "table" then
-    local ok, err = pcall(Store, SaveConfig)
-    if not ok then warn("[FuncsV3] Gagal menyimpan config: " .. tostring(err)) end
-  end
-end
+local SavePending = false
 
 local function SafeSet(key, value)
   if type(SaveConfig) ~= "table" then return end
-  if DeepEqual(SaveConfig[key], value) then return end
+  if SaveConfig[key] == value then return end -- tidak berubah, tidak perlu simpan
   SaveConfig[key] = value
-  if AutoSave and not SavePending then
+  -- debounce: banyak perubahan beruntun (mis. saat load) cukup 1x simpan
+  if AutoSave and type(Store) == "function" and not SavePending then
     SavePending = true
     task.delay(0.5, function()
       SavePending = false
-      DoStore()
+      local ok, err = pcall(Store, SaveConfig)
+      if not ok then warn("[FuncsV3] Gagal menyimpan config: " .. tostring(err)) end
     end)
   end
 end
 
+-- Bersihkan tabel dari nilai nil / kosong
 local function CleanTable(t)
   local out = {}
   if type(t) ~= "table" then
-    if t ~= nil and t ~= "" then table.insert(out, t) end
+    if t ~= nil and t ~= "" then
+      table.insert(out, t)
+    end
     return out
   end
   for _, v in ipairs(t) do
-    if v ~= nil and v ~= "" then table.insert(out, v) end
+    if v ~= nil and v ~= "" then
+      table.insert(out, v)
+    end
   end
   return out
 end
@@ -79,6 +75,8 @@ end
 -- ───────────────────────────────────────────────────
 --  PUBLIC SETUP
 -- ───────────────────────────────────────────────────
+-- path    : table, contoh: getgenv().MyHubConfig atau shared.Config
+-- storeFn : optional function(config) → dipanggil setiap kali config berubah
 function FuncsV3:SetTable(path, storeFn)
   SaveConfig = Checker(path, "table", {})
   Store = storeFn
@@ -91,43 +89,41 @@ end
 
 function FuncsV3:SetAutoSave(state)
   AutoSave = not not state
-  if AutoSave then DoStore() end -- ✅ flush saat nyala
-end
-
-function FuncsV3:Flush()
-  DoStore()
 end
 
 -- ───────────────────────────────────────────────────
 --  WRAPPERS
 -- ───────────────────────────────────────────────────
-function FuncsV3:Toggle(Tab, Name, Content, Default, Callback, Flag)
-  Name     = Checker(Name,     "string",   tostring(Name or ""))
-  Content  = Checker(Content,  "string",   tostring(Content or ""))
+
+-- ── Toggle ─────────────────────────────────────────
+-- Default: boolean ATAU "Save"
+function FuncsV3:Toggle(Tab, Name, Content, Default, Callback)
+  Name     = Checker(Name, "string", tostring(Name))
+  Content  = Checker(Content, "string", tostring(Content))
   Callback = Checker(Callback, "function", function() end)
-  local Key = Flag or Name
 
   local _default
   if Default == "Save" then
-    _default = Checker(SafeGet(Key, false), "boolean", false)
+    _default = Checker(SafeGet(Name, false), "boolean", false)
   else
     _default = Checker(Default, "boolean", false)
   end
 
   return Tab:AddToggle({
-    Title    = Name,
-    Content  = Content,
-    Default  = _default,
+    Title   = Name,
+    Content = Content,
+    Default = _default,
     Callback = function(value)
-      SafeSet(Key, value)
+      SafeSet(Name, value)
       Callback(value)
     end,
   })
 end
 
+-- ── Button ─────────────────────────────────────────
 function FuncsV3:Button(Tab, Name, Content, Callback)
-  Name     = Checker(Name,     "string",   tostring(Name or ""))
-  Content  = Checker(Content,  "string",   tostring(Content or ""))
+  Name     = Checker(Name, "string", tostring(Name))
+  Content  = Checker(Content, "string", tostring(Content))
   Callback = Checker(Callback, "function", function() end)
 
   return Tab:AddButton({
@@ -138,17 +134,19 @@ function FuncsV3:Button(Tab, Name, Content, Callback)
   })
 end
 
-function FuncsV3:Dropdown(Tab, Name, Content, Multi, Options, Default, Callback, Flag)
-  Name     = Checker(Name,     "string",   tostring(Name or ""))
-  Content  = Checker(Content,  "string",   tostring(Content or ""))
-  Multi    = Checker(Multi,    "boolean",  false)
-  Options  = Checker(Options,  "table",    {})
+-- ── Dropdown ───────────────────────────────────────
+-- Default: table/string ATAU "Save"
+function FuncsV3:Dropdown(Tab, Name, Content, Multi, Options, Default, Callback)
+  Name     = Checker(Name, "string", tostring(Name))
+  Content  = Checker(Content, "string", tostring(Content))
+  Multi    = Checker(Multi, "boolean", false)
+  Options  = Checker(Options, "table", {})
   Callback = Checker(Callback, "function", function() end)
-  local Key = Flag or Name
 
+  -- hanya "Save" yang memuat data tersimpan; Default eksplisit selalu dihormati
   local _default
   if Default == "Save" then
-    _default = CleanTable(SafeGet(Key, nil))
+    _default = CleanTable(SafeGet(Name, nil))
   else
     _default = CleanTable(Default)
   end
@@ -160,21 +158,22 @@ function FuncsV3:Dropdown(Tab, Name, Content, Multi, Options, Default, Callback,
     Options  = Options,
     Default  = _default,
     Callback = function(value)
-      SafeSet(Key, CleanTable(value))
+      SafeSet(Name, value)
       Callback(value)
     end,
   })
 end
 
-function FuncsV3:Textbox(Tab, Name, Content, Default, Callback, Flag)
-  Name     = Checker(Name,     "string",   tostring(Name or ""))
-  Content  = Checker(Content,  "string",   tostring(Content or ""))
+-- ── Textbox ────────────────────────────────────────
+-- Default: string ATAU "Save"
+function FuncsV3:Textbox(Tab, Name, Content, Default, Callback)
+  Name     = Checker(Name, "string", tostring(Name))
+  Content  = Checker(Content, "string", tostring(Content))
   Callback = Checker(Callback, "function", function() end)
-  local Key = Flag or Name
 
   local _default
   if Default == "Save" then
-    _default = Checker(SafeGet(Key, ""), "string", "")
+    _default = Checker(SafeGet(Name, ""), "string", "")
   else
     _default = Checker(Default, "string", "")
   end
@@ -184,24 +183,26 @@ function FuncsV3:Textbox(Tab, Name, Content, Default, Callback, Flag)
     Content  = Content,
     Default  = _default,
     Callback = function(value)
-      SafeSet(Key, value)
+      SafeSet(Name, value)
       Callback(value)
     end,
   })
 end
 
-function FuncsV3:Slider(Tab, Name, Content, Min, Max, Default, Callback, Increment, Flag)
-  Name      = Checker(Name,      "string",   tostring(Name or ""))
-  Content   = Checker(Content,   "string",   tostring(Content or ""))
-  Min       = Checker(Min,       "number",   0)
-  Max       = Checker(Max,       "number",   100)
-  Increment = Checker(Increment, "number",   1)
-  Callback  = Checker(Callback,  "function", function() end)
-  local Key = Flag or Name
+-- ── Slider ─────────────────────────────────────────
+-- Default: number ATAU "Save"
+-- Increment (opsional, argumen terakhir) default 1
+function FuncsV3:Slider(Tab, Name, Content, Min, Max, Default, Callback, Increment)
+  Name     = Checker(Name, "string", tostring(Name))
+  Content  = Checker(Content, "string", tostring(Content))
+  Min      = Checker(Min, "number", 0)
+  Max      = Checker(Max, "number", 100)
+  Increment = Checker(Increment, "number", 1)
+  Callback = Checker(Callback, "function", function() end)
 
   local _default
   if Default == "Save" then
-    _default = Checker(SafeGet(Key, Min), "number", Min)
+    _default = Checker(SafeGet(Name, Min), "number", Min)
   else
     _default = Checker(Default, "number", Min)
   end
@@ -209,19 +210,20 @@ function FuncsV3:Slider(Tab, Name, Content, Min, Max, Default, Callback, Increme
   _default = math.clamp(_default, Min, Max)
 
   return Tab:AddSlider({
-    Title     = Name,
-    Content   = Content,
+    Title    = Name,
+    Content  = Content,
     Increment = Increment,
-    Min       = Min,
-    Max       = Max,
-    Default   = _default,
-    Callback  = function(value)
-      SafeSet(Key, value)
+    Min      = Min,
+    Max      = Max,
+    Default  = _default,
+    Callback = function(value)
+      SafeSet(Name, value)
       Callback(value)
     end,
   })
 end
 
+-- ── Paragraph ──────────────────────────────────────
 function FuncsV3:Paragraph(Tab, Title, Content)
   return Tab:AddParagraph({
     Title   = Checker(Title,   "string", ""),
@@ -229,12 +231,14 @@ function FuncsV3:Paragraph(Tab, Title, Content)
   })
 end
 
+-- ── Seperator ──────────────────────────────────────
 function FuncsV3:Seperator(Tab, Title)
   return Tab:AddSeperator({
     Title = Checker(Title, "string", ""),
   })
 end
 
+-- ── Line ───────────────────────────────────────────
 function FuncsV3:Line(Tab)
   return Tab:AddLine()
 end
