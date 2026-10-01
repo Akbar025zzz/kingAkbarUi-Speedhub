@@ -1,18 +1,29 @@
 --[[
   ╔══════════════════════════════════════════════════╗
-  ║          KING AKBAR UI LIBRARY v1.3 (FIXED)      ║
+  ║          KING AKBAR UI LIBRARY v1.6              ║
   ║    github.com/Akbar025zzz/kingAkbarUi-Speedhub   ║
   ╚══════════════════════════════════════════════════╝
 
+  CHANGELOG v1.6:
+    + Theme registry (10 preset) — switching tanpa recreate UI
+    + Auto-save toggle/slider/input/dropdown ke JSON
+    + Dynamic dropdown (SetOptions, SetPlaceholder, GetOptions)
+    + Wrapper FuncsV3 (shortcut + storeFn eksternal)
+    + Anti-double execution + touch support
+
   CONTOH PEMAKAIAN:
     local Lib = loadstring(game:HttpGet("URL_RAW_FILE_INI"))()
-    local Win = Lib:CreateWindow({ "King Akbar", "v1.3", 100, UDim2.fromOffset(420, 280) })
+    local Win = Lib:CreateWindow({ "King Akbar", "v1.6", 100, UDim2.fromOffset(420, 280) })
     local Tab = Win:CreateTab({ "Main", "rbxassetid://7734010488" })
     local Sec = Tab:AddSection("Farm", true)
     Sec:AddToggle({ "Auto Farm", "Farm otomatis", false, function(v) print(v) end })
     Sec:AddSlider({ "WalkSpeed", "", 1, 16, 200, 16, function(v) print(v) end })
     Sec:AddDropdown({ "Mode", "", false, { "A", "B" }, { "A" }, function(v) print(v[1]) end })
     Lib:SetNotification({ "King Akbar", "Loaded", "Script berhasil dimuat" })
+
+  FILES PENDUKUNG:
+    • wrapper.lua   — shortcut + auto-save eksternal
+    • themes.lua    — 7 tema bonus + helper utility
 ]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -126,10 +137,84 @@ local CONFIG = {
 }
 
 -- ═══════════════════════════════════════════════════
+--  THEME REGISTRY (v1.6)
+-- ═══════════════════════════════════════════════════
+local Themes = {
+  Dark = {
+    Primary = Color3.fromRGB(255, 255, 255), Background = Color3.fromRGB(10, 10, 10),
+    Secondary = Color3.fromRGB(25, 25, 25), Panel = Color3.fromRGB(255, 255, 255),
+    Text = Color3.fromRGB(255, 255, 255), SubText = Color3.fromRGB(160, 160, 160),
+    Stroke = Color3.fromRGB(70, 70, 70), Divider = Color3.fromRGB(80, 80, 80),
+    LineColor = Color3.fromRGB(110, 110, 110),
+  },
+  Neon = {
+    Primary = Color3.fromRGB(0, 255, 200), Background = Color3.fromRGB(8, 12, 12),
+    Secondary = Color3.fromRGB(20, 30, 30), Panel = Color3.fromRGB(0, 255, 200),
+    Text = Color3.fromRGB(230, 255, 250), SubText = Color3.fromRGB(140, 200, 190),
+    Stroke = Color3.fromRGB(0, 180, 140), Divider = Color3.fromRGB(0, 140, 110),
+    LineColor = Color3.fromRGB(0, 200, 160),
+  },
+  Cyberpunk = {
+    Primary = Color3.fromRGB(255, 0, 128), Background = Color3.fromRGB(15, 5, 25),
+    Secondary = Color3.fromRGB(35, 10, 55), Panel = Color3.fromRGB(255, 0, 128),
+    Text = Color3.fromRGB(255, 230, 250), SubText = Color3.fromRGB(200, 150, 220),
+    Stroke = Color3.fromRGB(180, 0, 100), Divider = Color3.fromRGB(140, 0, 80),
+    LineColor = Color3.fromRGB(255, 100, 180),
+  },
+  BloodRed = {
+    Primary = Color3.fromRGB(220, 30, 30), Background = Color3.fromRGB(15, 5, 5),
+    Secondary = Color3.fromRGB(35, 10, 10), Panel = Color3.fromRGB(220, 30, 30),
+    Text = Color3.fromRGB(255, 235, 235), SubText = Color3.fromRGB(200, 150, 150),
+    Stroke = Color3.fromRGB(150, 20, 20), Divider = Color3.fromRGB(110, 15, 15),
+    LineColor = Color3.fromRGB(200, 60, 60),
+  },
+  Gold = {
+    Primary = Color3.fromRGB(255, 200, 40), Background = Color3.fromRGB(15, 12, 5),
+    Secondary = Color3.fromRGB(35, 28, 12), Panel = Color3.fromRGB(255, 200, 40),
+    Text = Color3.fromRGB(255, 250, 230), SubText = Color3.fromRGB(200, 180, 130),
+    Stroke = Color3.fromRGB(180, 140, 20), Divider = Color3.fromRGB(140, 110, 15),
+    LineColor = Color3.fromRGB(220, 170, 40),
+  },
+  Purple = {
+    Primary = Color3.fromRGB(170, 80, 255), Background = Color3.fromRGB(12, 8, 20),
+    Secondary = Color3.fromRGB(28, 18, 45), Panel = Color3.fromRGB(170, 80, 255),
+    Text = Color3.fromRGB(240, 230, 255), SubText = Color3.fromRGB(180, 160, 210),
+    Stroke = Color3.fromRGB(120, 60, 180), Divider = Color3.fromRGB(90, 45, 140),
+    LineColor = Color3.fromRGB(160, 100, 220),
+  },
+  Ocean = {
+    Primary = Color3.fromRGB(60, 160, 255), Background = Color3.fromRGB(8, 15, 25),
+    Secondary = Color3.fromRGB(18, 30, 45), Panel = Color3.fromRGB(60, 160, 255),
+    Text = Color3.fromRGB(230, 240, 255), SubText = Color3.fromRGB(150, 180, 220),
+    Stroke = Color3.fromRGB(40, 110, 180), Divider = Color3.fromRGB(30, 85, 140),
+    LineColor = Color3.fromRGB(80, 150, 220),
+  },
+  Light = {
+    Primary = Color3.fromRGB(60, 60, 60), Background = Color3.fromRGB(245, 245, 245),
+    Secondary = Color3.fromRGB(220, 220, 220), Panel = Color3.fromRGB(60, 60, 60),
+    Text = Color3.fromRGB(30, 30, 30), SubText = Color3.fromRGB(110, 110, 110),
+    Stroke = Color3.fromRGB(180, 180, 180), Divider = Color3.fromRGB(200, 200, 200),
+    LineColor = Color3.fromRGB(160, 160, 160),
+  },
+  Matrix = {
+    Primary = Color3.fromRGB(0, 255, 60), Background = Color3.fromRGB(0, 8, 0),
+    Secondary = Color3.fromRGB(5, 25, 5), Panel = Color3.fromRGB(0, 255, 60),
+    Text = Color3.fromRGB(220, 255, 220), SubText = Color3.fromRGB(130, 200, 130),
+    Stroke = Color3.fromRGB(0, 150, 30), Divider = Color3.fromRGB(0, 110, 20),
+    LineColor = Color3.fromRGB(0, 200, 50),
+  },
+  Sunset = {
+    Primary = Color3.fromRGB(255, 130, 60), Background = Color3.fromRGB(20, 8, 15),
+    Secondary = Color3.fromRGB(40, 18, 25), Panel = Color3.fromRGB(255, 130, 60),
+    Text = Color3.fromRGB(255, 240, 230), SubText = Color3.fromRGB(210, 170, 150),
+    Stroke = Color3.fromRGB(180, 80, 40), Divider = Color3.fromRGB(140, 60, 30),
+    LineColor = Color3.fromRGB(220, 110, 60),
+  },
+}
+
+-- ═══════════════════════════════════════════════════
 --  HELPER UMUM
 -- ═══════════════════════════════════════════════════
--- Ambil argumen dari format array ({a, b, c}) ATAU named ({Title = a}).
--- Aman untuk nilai false (tidak ketimpa default).
 local function Get(Cfg, Idx, Key, Default)
   if type(Cfg) ~= "table" then
     if Idx == 1 and Cfg ~= nil then return Cfg end
@@ -141,7 +226,6 @@ local function Get(Cfg, Idx, Key, Default)
   return v
 end
 
--- Panggil callback user tanpa merusak script kalau callback error
 local function SafeCall(Fn, ...)
   if type(Fn) ~= "function" then return end
   local ok, err = pcall(Fn, ...)
@@ -168,7 +252,6 @@ local function TextWidth(Text, Size, Font)
   return #Text * Size * 0.55
 end
 
--- warna teks/knob yang kontras terhadap warna latar (agar semua tema terbaca)
 local function ContrastColor(C)
   local lum = 0.299 * C.R + 0.587 * C.G + 0.114 * C.B
   return lum > 0.6 and Color3.fromRGB(20, 20, 20) or Color3.fromRGB(255, 255, 255)
@@ -177,6 +260,7 @@ end
 local Custom = {} do
   Custom.ColorRGB = CONFIG.Theme.Primary
   Custom.Config   = CONFIG
+  Custom.Themes   = Themes
 
   function Custom:Create(Name, Properties, Parent)
     local _instance = Instance.new(Name)
@@ -188,7 +272,6 @@ local Custom = {} do
   end
 
   function Custom:EnabledAFK()
-    -- selalu connect; cek config saat event terjadi (supaya AntiAFK = false dari GetConfig() berfungsi)
     BindLib(Player.Idled, function()
       if not CONFIG.Behavior.AntiAFK then return end
       pcall(function()
@@ -199,8 +282,22 @@ local Custom = {} do
   end
 
   function Custom:SetTheme(t)
+    if type(t) == "string" then
+      t = Themes[t] or CONFIG.Theme
+    end
     for k, v in pairs(t) do CONFIG.Theme[k] = v end
     Custom.ColorRGB = CONFIG.Theme.Primary
+  end
+
+  function Custom:GetTheme(name)
+    return Themes[name]
+  end
+
+  function Custom:ListThemes()
+    local list = {}
+    for k in pairs(Themes) do table.insert(list, k) end
+    table.sort(list)
+    return list
   end
 
   function Custom:SetFont(f)
@@ -213,7 +310,37 @@ end
 Custom:EnabledAFK()
 
 -- ═══════════════════════════════════════════════════
---  SCREENGUI FACTORY (aman di executor & Studio)
+--  AUTO-SAVE (v1.6)
+-- ═══════════════════════════════════════════════════
+local SaveFile = "KingAkbarUI_Save.json"
+
+local function LoadSave()
+  if not writefile or not readfile or not isfile then return {} end
+  if not isfile(SaveFile) then return {} end
+  local ok, data = pcall(function()
+    return game:GetService("HttpService"):JSONDecode(readfile(SaveFile))
+  end)
+  if ok and type(data) == "table" then return data end
+  return {}
+end
+
+local function WriteSave(data)
+  if not writefile then return end
+  local ok, encoded = pcall(function()
+    return game:GetService("HttpService"):JSONEncode(data)
+  end)
+  if ok then pcall(writefile, SaveFile, encoded) end
+end
+
+local SaveData = LoadSave()
+local function SaveKey(key, val)
+  if not key then return end
+  SaveData[key] = val
+  WriteSave(SaveData)
+end
+
+-- ═══════════════════════════════════════════════════
+--  SCREENGUI FACTORY
 -- ═══════════════════════════════════════════════════
 local function NewScreenGui(Name, Order)
   local gui = Instance.new("ScreenGui")
@@ -246,7 +373,7 @@ local function NewScreenGui(Name, Order)
 end
 
 -- ═══════════════════════════════════════════════════
---  DRAGGABLE (drag lancar walau kursor keluar dari handle)
+--  DRAGGABLE
 -- ═══════════════════════════════════════════════════
 local function MakeDraggable(Handle, Object, Bind)
   local Dragging, DragInput, DragStart, StartPos, Moved = false, nil, nil, nil, false
@@ -283,7 +410,6 @@ local function MakeDraggable(Handle, Object, Bind)
     end
   end)
 
-  -- fungsi untuk cek apakah tadi benar-benar di-drag (bukan klik)
   return function() return Moved end
 end
 
@@ -314,7 +440,7 @@ end
 local Open_Close, Open_Close_Moved = CreateFloatingButton()
 
 -- ═══════════════════════════════════════════════════
---  RIPPLE CLICK (tanpa asset, pakai Frame bulat)
+--  RIPPLE CLICK
 -- ═══════════════════════════════════════════════════
 local function CircleClick(Button)
   task.spawn(function()
@@ -350,7 +476,7 @@ local function CircleClick(Button)
 end
 
 -- ═══════════════════════════════════════════════════
---  ITEM BASE (judul + deskripsi auto-tinggi)
+--  ITEM BASE
 -- ═══════════════════════════════════════════════════
 local function NewItemBase(Parent, Order, Title, Content, Reserve)
   local Base = {}
@@ -426,7 +552,6 @@ local function NewItemBase(Parent, Order, Title, Content, Reserve)
   return Base
 end
 
--- fungsi umum yang ditempel ke semua item
 local function AttachCommon(Funcs, Base)
   function Funcs:SetTitle(Text) Base.Title.Text = tostring(Text) end
   function Funcs:SetContent(Text) Base.Content.Text = tostring(Text) end
@@ -571,7 +696,6 @@ function Speed_Library:CreateWindow(Config)
   local SizeUi      = Get(Config, 4, "SizeUi", CONFIG.Window.Size)
   if typeof(SizeUi) ~= "UDim2" then SizeUi = CONFIG.Window.Size end
 
-  -- koneksi global milik window ini (di-disconnect saat window ditutup)
   local WindowConns = {}
   local function BindGlobal(Signal, Fn)
     local c = Signal:Connect(Fn)
@@ -581,7 +705,7 @@ function Speed_Library:CreateWindow(Config)
   end
 
   local WindowGui = NewScreenGui("KingAkbarUI_Window", 10)
-  Open_Close.Image = CONFIG.Assets.FloatingButton -- ikuti config terbaru (sebelum CreateWindow)
+  Open_Close.Image = CONFIG.Assets.FloatingButton
 
   local DropShadowHolder = Custom:Create("Frame", {
     Name = "Holder",
@@ -608,7 +732,6 @@ function Speed_Library:CreateWindow(Config)
   Custom:Create("UICorner", { CornerRadius = UDim.new(0, CONFIG.Window.CornerRadius) }, Main)
   Custom:Create("UIStroke", { Color = CONFIG.Theme.Stroke, Thickness = 1.6 }, Main)
 
-  -- ═══ Background Image ═══
   if CONFIG.Window.BackgroundImage ~= "" then
     local BgImage = Custom:Create("ImageLabel", {
       Name = "BackgroundImage",
@@ -637,7 +760,6 @@ function Speed_Library:CreateWindow(Config)
     }, Tint)
   end
 
-  -- ═══ Top bar ═══
   local Top = Custom:Create("Frame", {
     Name = "Top",
     BackgroundTransparency = 1,
@@ -682,7 +804,6 @@ function Speed_Library:CreateWindow(Config)
     ZIndex = 6,
   }, Top)
 
-  -- garis pemisah bawah top bar
   Custom:Create("Frame", {
     AnchorPoint = Vector2.new(0.5, 0),
     BackgroundColor3 = CONFIG.Theme.Panel,
@@ -692,7 +813,6 @@ function Speed_Library:CreateWindow(Config)
     ZIndex = 5,
   }, Main)
 
-  -- ═══ Kolom tab & area konten ═══
   local LayersTab = Custom:Create("Frame", {
     Name = "LayersTab",
     BackgroundTransparency = 1, BorderSizePixel = 0,
@@ -744,7 +864,6 @@ function Speed_Library:CreateWindow(Config)
     ZIndex = 5,
   }, Layers)
 
-  -- ═══ Tampil / sembunyi / tutup ═══
   local Destroyed = false
 
   local function ShowWindow()
@@ -774,7 +893,7 @@ function Speed_Library:CreateWindow(Config)
   end)
 
   BindGlobal(Open_Close.Activated, function()
-    if Open_Close_Moved() then return end -- barusan di-drag, bukan klik
+    if Open_Close_Moved() then return end
     if DropShadowHolder.Visible then return end
     ShowWindow()
   end)
@@ -786,7 +905,6 @@ function Speed_Library:CreateWindow(Config)
 
   MakeDraggable(Top, DropShadowHolder, BindGlobal)
 
-  -- ═══ Overlay Dropdown ═══
   local DropdownOpen = false
   local DropToken = 0
 
@@ -814,7 +932,7 @@ function Speed_Library:CreateWindow(Config)
     AnchorPoint = Vector2.new(1, 0.5),
     BackgroundColor3 = CONFIG.Theme.Secondary,
     BorderSizePixel = 0,
-    Active = true, -- supaya klik di dalam list tidak menutup overlay
+    Active = true,
     Position = UDim2.new(1, 172, 0.5, 0),
     Size = UDim2.new(0, 160, 1, -16),
     ClipsDescendants = true,
@@ -859,7 +977,6 @@ function Speed_Library:CreateWindow(Config)
 
   ConnectButton.Activated:Connect(CloseDropdownPanel)
 
-  -- ═══════════ CreateTab ═══════════
   local Tabs = {}
   local AllTabs = {}
   local CurrentTab = nil
@@ -939,7 +1056,6 @@ function Speed_Library:CreateWindow(Config)
       }, Tab)
     end
 
-    -- indikator tab aktif (satu per tab, ikut scroll)
     local Bar = Custom:Create("Frame", {
       Name = "ChooseFrame",
       AnchorPoint = Vector2.new(0, 0.5),
@@ -968,7 +1084,6 @@ function Speed_Library:CreateWindow(Config)
       SelectTab(TabObj, false)
     end)
 
-    -- ═══════════ Sections ═══════════
     local Sections, CountSection = {}, 0
 
     function Sections:AddSection(SectionTitle, OpenDefault)
@@ -1067,7 +1182,6 @@ function Speed_Library:CreateWindow(Config)
         SortOrder = Enum.SortOrder.LayoutOrder,
       }, SectionAdd)
 
-      -- tinggi section otomatis mengikuti isi (tidak perlu hitung manual)
       local function ApplyLayout(Animate)
         local t = Animate and 0.15 or 0
         local contentH = SectionList.AbsoluteContentSize.Y
@@ -1091,7 +1205,6 @@ function Speed_Library:CreateWindow(Config)
 
       ApplyLayout(false)
 
-      -- ═══════════ Items ═══════════
       local Item = {}
       local ItemCount = 0
       local function NextOrder()
@@ -1212,7 +1325,13 @@ function Speed_Library:CreateWindow(Config)
         local TContent = Get(TConfig, 2, "Content", "")
         local Default  = Get(TConfig, 3, "Default", false)
         local Callback = Get(TConfig, 4, "Callback", function() end)
+        local SaveKeyName = Get(TConfig, 5, "SaveKey", nil)
         local Funcs = { Value = Default == true }
+
+        -- load dari save kalau ada
+        if SaveKeyName and SaveData[SaveKeyName] ~= nil then
+          Funcs.Value = SaveData[SaveKeyName] == true
+        end
 
         local Base = NewItemBase(SectionAdd, NextOrder(), TTitle, TContent, 70)
         AttachCommon(Funcs, Base)
@@ -1265,10 +1384,11 @@ function Speed_Library:CreateWindow(Config)
           }, 0.2)
         end
 
-        function Funcs:Set(Value)
+        function Funcs:Set(Value, NoFire)
           Funcs.Value = Value == true
           ToggleAnimation(Funcs.Value)
-          SafeCall(Callback, Funcs.Value)
+          if SaveKeyName then SaveKey(SaveKeyName, Funcs.Value) end
+          if not NoFire then SafeCall(Callback, Funcs.Value) end
         end
 
         ToggleButton.Activated:Connect(function()
@@ -1276,7 +1396,7 @@ function Speed_Library:CreateWindow(Config)
           Funcs:Set(not Funcs.Value)
         end)
 
-        Funcs:Set(Funcs.Value)
+        Funcs:Set(Funcs.Value, true)
         return Funcs
       end
 
@@ -1288,9 +1408,14 @@ function Speed_Library:CreateWindow(Config)
         local Max       = tonumber(Get(SConfig, 5, "Max", 100)) or 100
         local Default   = tonumber(Get(SConfig, 6, "Default", Min)) or Min
         local Callback  = Get(SConfig, 7, "Callback", function() end)
+        local SaveKeyName = Get(SConfig, 8, "SaveKey", nil)
 
         if Increment <= 0 then Increment = 1 end
         if Max <= Min then Max = Min + 1 end
+
+        if SaveKeyName and type(SaveData[SaveKeyName]) == "number" then
+          Default = SaveData[SaveKeyName]
+        end
 
         local Funcs = { Value = Default }
 
@@ -1358,7 +1483,6 @@ function Speed_Library:CreateWindow(Config)
         Custom:Create("UICorner", {}, SliderCircle)
         Custom:Create("UIStroke", { Color = CONFIG.Theme.Primary }, SliderCircle)
 
-        -- area sentuh lebih besar (mobile): track cuma setebal 3px
         local SliderHit = Custom:Create("TextButton", {
           Font = CONFIG.Font.Regular, Text = "",
           AnchorPoint = Vector2.new(1, 0.5),
@@ -1375,6 +1499,7 @@ function Speed_Library:CreateWindow(Config)
           Funcs.Value = Value
           TextBox.Text = tostring(Value)
           SliderFill.Size = UDim2.fromScale((Value - Min) / (Max - Min), 1)
+          if SaveKeyName then SaveKey(SaveKeyName, Value) end
           if Fire then SafeCall(Callback, Value) end
         end
 
@@ -1389,7 +1514,7 @@ function Speed_Library:CreateWindow(Config)
           if Input.UserInputType == Enum.UserInputType.MouseButton1
             or Input.UserInputType == Enum.UserInputType.Touch then
             Dragging = true
-            ScrolLayers.ScrollingEnabled = false -- cegah halaman ikut scroll saat geser slider
+            ScrolLayers.ScrollingEnabled = false
             UpdateFromX(Input.Position.X)
           end
         end)
@@ -1410,7 +1535,6 @@ function Speed_Library:CreateWindow(Config)
           end
         end)
 
-        -- hanya izinkan angka, minus, dan titik
         TextBox:GetPropertyChangedSignal("Text"):Connect(function()
           local cleaned = TextBox.Text:gsub("[^%d%.%-]", "")
           if cleaned ~= TextBox.Text then TextBox.Text = cleaned end
@@ -1434,6 +1558,12 @@ function Speed_Library:CreateWindow(Config)
         local IContent = Get(IConfig, 2, "Content", "")
         local Default  = tostring(Get(IConfig, 3, "Default", ""))
         local Callback = Get(IConfig, 4, "Callback", function() end)
+        local SaveKeyName = Get(IConfig, 5, "SaveKey", nil)
+
+        if SaveKeyName and type(SaveData[SaveKeyName]) == "string" then
+          Default = SaveData[SaveKeyName]
+        end
+
         local Funcs = { Value = Default }
 
         local Base = NewItemBase(SectionAdd, NextOrder(), ITitle, IContent, 180)
@@ -1454,7 +1584,7 @@ function Speed_Library:CreateWindow(Config)
           Font = CONFIG.Font.Bold,
           PlaceholderColor3 = Color3.fromRGB(120, 120, 120),
           PlaceholderText = "Write here...",
-          Text = "", TextColor3 = CONFIG.Theme.Text, TextSize = 12,
+          Text = Default, TextColor3 = CONFIG.Theme.Text, TextSize = 12,
           ClearTextOnFocus = false,
           TextXAlignment = Enum.TextXAlignment.Left,
           AnchorPoint = Vector2.new(0, 0.5),
@@ -1464,18 +1594,19 @@ function Speed_Library:CreateWindow(Config)
           ZIndex = 7,
         }, InputFrame)
 
-        function Funcs:Set(Value)
+        function Funcs:Set(Value, NoFire)
           Value = tostring(Value or "")
           InputTextBox.Text = Value
           Funcs.Value = Value
-          SafeCall(Callback, Value)
+          if SaveKeyName then SaveKey(SaveKeyName, Value) end
+          if not NoFire then SafeCall(Callback, Value) end
         end
 
         InputTextBox.FocusLost:Connect(function()
           Funcs:Set(InputTextBox.Text)
         end)
 
-        Funcs:Set(Default)
+        Funcs:Set(Default, true)
         return Funcs
       end
 
@@ -1486,12 +1617,17 @@ function Speed_Library:CreateWindow(Config)
         local Options  = Get(DConfig, 4, "Options", {})
         local Default  = Get(DConfig, 5, "Default", {})
         local Callback = Get(DConfig, 6, "Callback", function() end)
+        local SaveKeyName = Get(DConfig, 7, "SaveKey", nil)
 
         if type(Options) ~= "table" then Options = {} end
         if type(Default) == "string" and Default ~= "" then
           Default = { Default }
         elseif type(Default) ~= "table" then
           Default = {}
+        end
+
+        if SaveKeyName and type(SaveData[SaveKeyName]) == "table" then
+          Default = SaveData[SaveKeyName]
         end
 
         local Funcs = { Value = {}, Options = {} }
@@ -1626,7 +1762,20 @@ function Speed_Library:CreateWindow(Config)
 
           local Text = table.concat(newVal, ", ")
           OptionSelecting.Text = Text ~= "" and Text or "Select Options"
+          if SaveKeyName then SaveKey(SaveKeyName, newVal) end
           if not NoCallback then SafeCall(Callback, Funcs.Value) end
+        end
+
+        function Funcs:GetValue()
+          return table.clone(Funcs.Value)
+        end
+
+        function Funcs:GetOptions()
+          return table.clone(Funcs.Options)
+        end
+
+        function Funcs:SetPlaceholder(text)
+          OptionSelecting.Text = tostring(text or "Select Options")
         end
 
         function Funcs:AddOption(OptionName)
@@ -1706,7 +1855,6 @@ function Speed_Library:CreateWindow(Config)
         return Funcs
       end
 
-      -- ═══════════ AddPanel (Drop Panel) ═══════════
       function Item:AddPanel(PConfig)
         local PTitle   = Get(PConfig, 1, "Title", "")
         local PContent = Get(PConfig, 2, "Content", "")
@@ -1852,7 +2000,6 @@ function Speed_Library:CreateWindow(Config)
     return Sections
   end
 
-  -- ═══ Fungsi window ═══
   function Tabs:Show() ShowWindow() end
   function Tabs:Hide() HideWindow() end
   function Tabs:Toggle()
@@ -1867,8 +2014,22 @@ end
 --  PUBLIC API
 -- ═══════════════════════════════════════════════════
 function Speed_Library:SetTheme(t) Custom:SetTheme(t) end
+function Speed_Library:GetTheme(name) return Custom:GetTheme(name) end
+function Speed_Library:ListThemes() return Custom:ListThemes() end
 function Speed_Library:SetFont(f)  Custom:SetFont(f)  end
 function Speed_Library:GetConfig() return Custom:GetConfig() end
+
+-- Auto-save helpers
+function Speed_Library:GetSave() return SaveData end
+function Speed_Library:SetSave(key, val) SaveKey(key, val) end
+function Speed_Library:ClearSave()
+  SaveData = {}
+  if writefile and isfile and isfile(SaveFile) then
+    pcall(function() delfile(SaveFile) end)
+  end
+end
+function Speed_Library:SaveFile() return SaveFile end
+
 function Speed_Library:Destroy()
   if Env.KingAkbarUI_Cleanup then Env.KingAkbarUI_Cleanup() end
   Speed_Library.Unloaded = true
