@@ -1,18 +1,29 @@
 --[[
   ╔══════════════════════════════════════════════════╗
-  ║          KING AKBAR UI LIBRARY v1.3 (FIXED)      ║
+  ║          KING AKBAR UI LIBRARY v1.5              ║
   ║    github.com/Akbar025zzz/kingAkbarUi-Speedhub   ║
   ╚══════════════════════════════════════════════════╝
 
-  CONTOH PEMAKAIAN:
+  FITUR v1.5:
+    ✔ Auto Save / Auto Load (toggle, slider, input, dropdown)
+    ✔ Dynamic Dropdown Refresh
+    ✔ Tab kotak profesional
+    ✔ Anti-dup execute
+
+  CONTOH:
     local Lib = loadstring(game:HttpGet("URL_RAW_FILE_INI"))()
-    local Win = Lib:CreateWindow({ "King Akbar", "v1.3", 100, UDim2.fromOffset(420, 280) })
+    local Win = Lib:CreateWindow({ "King Akbar", "v1.5", 100, UDim2.fromOffset(420, 280) })
     local Tab = Win:CreateTab({ "Main", "rbxassetid://7734010488" })
     local Sec = Tab:AddSection("Farm", true)
+
     Sec:AddToggle({ "Auto Farm", "Farm otomatis", false, function(v) print(v) end })
     Sec:AddSlider({ "WalkSpeed", "", 1, 16, 200, 16, function(v) print(v) end })
-    Sec:AddDropdown({ "Mode", "", false, { "A", "B" }, { "A" }, function(v) print(v[1]) end })
-    Lib:SetNotification({ "King Akbar", "Loaded", "Script berhasil dimuat" })
+
+    -- Method manual:
+    Lib:SetAutoSave(true)      -- default true
+    Lib:SaveNow()              -- paksa save sekarang
+    Lib:ClearSave()            -- hapus semua data tersimpan
+    Lib:SetSaveFile("custom")  -- ganti nama file (harus sebelum CreateWindow)
 ]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -23,6 +34,7 @@ local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local VirtualUser      = game:GetService("VirtualUser")
 local TextService      = game:GetService("TextService")
+local HttpService      = game:GetService("HttpService")
 local CoreGui          = game:GetService("CoreGui")
 
 local Player = Players.LocalPlayer
@@ -32,7 +44,7 @@ if not Player then
 end
 
 -- ═══════════════════════════════════════════════════
---  CLEANUP EXECUTE ULANG (hindari UI dobel)
+--  CLEANUP EXECUTE ULANG
 -- ═══════════════════════════════════════════════════
 local Env = (getgenv and getgenv()) or _G
 
@@ -63,7 +75,6 @@ Env.KingAkbarUI_Cleanup = function()
   table.clear(LibGuis)
 end
 
--- Bersihkan sisa UI dari versi lama (v1.2 dst) yang tidak terlacak
 pcall(function()
   local roots = { Player:FindFirstChild("PlayerGui") }
   pcall(function() table.insert(roots, CoreGui) end)
@@ -78,6 +89,98 @@ pcall(function()
     end
   end
 end)
+
+-- ═══════════════════════════════════════════════════
+--  AUTO SAVE MANAGER
+-- ═══════════════════════════════════════════════════
+local AutoSave = {}
+AutoSave.Enabled     = true
+AutoSave.Data        = {}
+AutoSave.FileName    = nil
+AutoSave.SaveFile    = nil       -- custom nama file (opsional)
+AutoSave._pending    = 0
+AutoSave._saveDelay  = 0.6
+
+local function HasFileIO()
+  return type(writefile) == "function"
+     and type(readfile)  == "function"
+     and type(isfile)    == "function"
+end
+
+function AutoSave:Init()
+  if self.FileName then return end -- sudah pernah init
+
+  local name
+  if self.SaveFile then
+    name = tostring(self.SaveFile)
+    if not name:match("%.json$") then name = name .. ".json" end
+  else
+    name = "KingAkbarUI_" .. tostring(game.PlaceId) .. ".json"
+  end
+  self.FileName = name
+
+  if HasFileIO() then
+    if isfile(name) then
+      local ok, content = pcall(readfile, name)
+      if ok and content and content ~= "" then
+        local ok2, decoded = pcall(HttpService.JSONDecode, HttpService, content)
+        if ok2 and type(decoded) == "table" then
+          self.Data = decoded
+        end
+      end
+    end
+  else
+    -- fallback: simpan di memory getgenv (persist antar execute dalam 1 sesi)
+    local env = (getgenv and getgenv()) or _G
+    self.Data = env.__KingAkbarUI_SaveData or {}
+  end
+end
+
+function AutoSave:Get(key)
+  if key == nil then return nil end
+  return self.Data[key]
+end
+
+function AutoSave:Set(key, value)
+  if not self.Enabled or key == nil then return end
+  self.Data[key] = value
+  self:QueueSave()
+end
+
+function AutoSave:QueueSave()
+  self._pending += 1
+  local token = self._pending
+  task.delay(self._saveDelay, function()
+    if token == self._pending then
+      self:Flush()
+    end
+  end)
+end
+
+function AutoSave:Flush()
+  if not self.Enabled then return end
+  if HasFileIO() then
+    local ok, encoded = pcall(HttpService.JSONEncode, HttpService, self.Data)
+    if ok and encoded then
+      pcall(writefile, self.FileName, encoded)
+    end
+  else
+    local env = (getgenv and getgenv()) or _G
+    env.__KingAkbarUI_SaveData = self.Data
+  end
+end
+
+function AutoSave:Clear()
+  self.Data = {}
+  self:Flush()
+end
+
+function AutoSave:SetFile(name)
+  self.SaveFile = name
+  self.FileName = nil
+  self.Data = {}
+  self:Init()
+end
 
 -- ═══════════════════════════════════════════════════
 --  GLOBAL CONFIG
@@ -165,6 +268,16 @@ local function TextWidth(Text, Size, Font)
   return #Text * Size * 0.55
 end
 
+local function ContrastColor(C)
+  local lum = 0.299 * C.R + 0.587 * C.G + 0.114 * C.B
+  return lum > 0.6 and Color3.fromRGB(20, 20, 20) or Color3.fromRGB(255, 255, 255)
+end
+
+-- key builder (namespace + judul + tipe)
+local function MakeKey(...)
+  return table.concat({ ... }, "|")
+end
+
 local Custom = {} do
   Custom.ColorRGB = CONFIG.Theme.Primary
   Custom.Config   = CONFIG
@@ -179,8 +292,8 @@ local Custom = {} do
   end
 
   function Custom:EnabledAFK()
-    if not CONFIG.Behavior.AntiAFK then return end
     BindLib(Player.Idled, function()
+      if not CONFIG.Behavior.AntiAFK then return end
       pcall(function()
         VirtualUser:CaptureController()
         VirtualUser:ClickButton2(Vector2.new())
@@ -277,7 +390,7 @@ local function MakeDraggable(Handle, Object, Bind)
 end
 
 -- ═══════════════════════════════════════════════════
---  FLOATING OPEN/CLOSE BUTTON
+--  FLOATING BUTTON
 -- ═══════════════════════════════════════════════════
 local function CreateFloatingButton()
   local Gui = NewScreenGui("KingAkbarUI_Floating", 20)
@@ -357,7 +470,7 @@ local function NewItemBase(Parent, Order, Title, Content, Reserve)
   local TitleLabel = Custom:Create("TextLabel", {
     Name = "ItemTitle",
     Font = CONFIG.Font.Bold, Text = tostring(Title), TextSize = 13,
-    TextColor3 = Color3.fromRGB(231, 231, 231),
+    TextColor3 = CONFIG.Theme.Text,
     TextXAlignment = Enum.TextXAlignment.Left,
     TextYAlignment = Enum.TextYAlignment.Center,
     TextTruncate = Enum.TextTruncate.AtEnd,
@@ -428,6 +541,8 @@ end
 local Speed_Library = {}
 Speed_Library.Unloaded = false
 
+AutoSave:Init()  -- load save file
+
 -- ─────────────────────── Notification ───────────────────────
 local NotifGui, NotifHolder
 local NotifCounter = 0
@@ -457,8 +572,8 @@ function Speed_Library:SetNotification(Config)
   local Title       = tostring(Get(Config, 1, "Title", ""))
   local Description = tostring(Get(Config, 2, "Description", ""))
   local Content     = tostring(Get(Config, 3, "Content", ""))
-  local Time        = tonumber(Get(Config, 5, "Time", CONFIG.Notification.AnimateTime)) or 0.5
-  local Delay       = tonumber(Get(Config, 6, "Delay", CONFIG.Notification.Duration)) or 5
+  local Time        = tonumber(Get(Config, 4, "Time", CONFIG.Notification.AnimateTime)) or 0.5
+  local Delay       = tonumber(Get(Config, 5, "Delay", CONFIG.Notification.Duration)) or 5
 
   local Holder = EnsureNotifHolder()
   NotifCounter += 1
@@ -559,6 +674,8 @@ function Speed_Library:CreateWindow(Config)
   local SizeUi      = Get(Config, 4, "SizeUi", CONFIG.Window.Size)
   if typeof(SizeUi) ~= "UDim2" then SizeUi = CONFIG.Window.Size end
 
+  local WindowNamespace = Title ~= "" and Title or "Window"
+
   local WindowConns = {}
   local function BindGlobal(Signal, Fn)
     local c = Signal:Connect(Fn)
@@ -568,6 +685,7 @@ function Speed_Library:CreateWindow(Config)
   end
 
   local WindowGui = NewScreenGui("KingAkbarUI_Window", 10)
+  Open_Close.Image = CONFIG.Assets.FloatingButton
 
   local DropShadowHolder = Custom:Create("Frame", {
     Name = "Holder",
@@ -594,7 +712,6 @@ function Speed_Library:CreateWindow(Config)
   Custom:Create("UICorner", { CornerRadius = UDim.new(0, CONFIG.Window.CornerRadius) }, Main)
   Custom:Create("UIStroke", { Color = CONFIG.Theme.Stroke, Thickness = 1.6 }, Main)
 
-  -- ═══ Background Image ═══
   if CONFIG.Window.BackgroundImage ~= "" then
     local BgImage = Custom:Create("ImageLabel", {
       Name = "BackgroundImage",
@@ -623,7 +740,6 @@ function Speed_Library:CreateWindow(Config)
     }, Tint)
   end
 
-  -- ═══ Top bar ═══
   local Top = Custom:Create("Frame", {
     Name = "Top",
     BackgroundTransparency = 1,
@@ -677,7 +793,6 @@ function Speed_Library:CreateWindow(Config)
     ZIndex = 5,
   }, Main)
 
-  -- ═══ Kolom tab & area konten ═══
   local LayersTab = Custom:Create("Frame", {
     Name = "LayersTab",
     BackgroundTransparency = 1, BorderSizePixel = 0,
@@ -729,7 +844,6 @@ function Speed_Library:CreateWindow(Config)
     ZIndex = 5,
   }, Layers)
 
-  -- ═══ Tampil / sembunyi / tutup ═══
   local Destroyed = false
 
   local function ShowWindow()
@@ -745,6 +859,7 @@ function Speed_Library:CreateWindow(Config)
   local function DestroyWindow()
     if Destroyed then return end
     Destroyed = true
+    AutoSave:Flush()  -- save sebelum destroy
     for _, c in ipairs(WindowConns) do
       pcall(function() c:Disconnect() end)
     end
@@ -771,7 +886,6 @@ function Speed_Library:CreateWindow(Config)
 
   MakeDraggable(Top, DropShadowHolder, BindGlobal)
 
-  -- ═══ Overlay Dropdown ═══
   local DropdownOpen = false
   local DropToken = 0
 
@@ -856,9 +970,31 @@ function Speed_Library:CreateWindow(Config)
     for _, T in ipairs(AllTabs) do
       local sel = (T == Target)
       T.Page.Visible = sel
-      Tween(T.Frame, { BackgroundTransparency = sel and 0.92 or 0.999 }, t)
-      Tween(T.Bar, { Size = sel and UDim2.new(0, 1, 0, 14) or UDim2.new(0, 1, 0, 0) }, t)
-      Tween(T.Stroke, { Transparency = sel and 0 or 1 }, t)
+
+      Tween(T.Frame, {
+        BackgroundTransparency = sel and 0.72 or 0.9,
+        Size = sel and UDim2.new(1, 0, 0, 34) or UDim2.new(1, 0, 0, 32),
+      }, t)
+
+      Tween(T.Bar, {
+        Size = sel and UDim2.new(0, 3, 0, 20) or UDim2.new(0, 0, 0, 20),
+      }, t)
+
+      Tween(T.Stroke, {
+        Color = sel and CONFIG.Theme.Primary or CONFIG.Theme.Stroke,
+        Transparency = sel and 0.35 or 0.85,
+      }, t)
+
+      if T.Icon then
+        Tween(T.Icon, {
+          ImageColor3 = sel and CONFIG.Theme.Primary or CONFIG.Theme.Text,
+        }, t)
+      end
+      if T.Label then
+        Tween(T.Label, {
+          TextColor3 = sel and CONFIG.Theme.Primary or CONFIG.Theme.Text,
+        }, t)
+      end
     end
     NameTab.Text = Target.Name
   end
@@ -868,6 +1004,7 @@ function Speed_Library:CreateWindow(Config)
     local Icon  = Get(TabConfig, 2, "Icon", "")
     if type(Icon) ~= "string" then Icon = "" end
 
+    local TabNamespace = MakeKey(WindowNamespace, _Name)
     local TabIndex = #AllTabs + 1
 
     local ScrolLayers = Custom:Create("ScrollingFrame", {
@@ -890,55 +1027,77 @@ function Speed_Library:CreateWindow(Config)
 
     local Tab = Custom:Create("Frame", {
       Name = "Tab",
-      BackgroundColor3 = CONFIG.Theme.Panel,
-      BackgroundTransparency = 0.999,
+      BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+      BackgroundTransparency = 0.9,
       BorderSizePixel = 0,
       LayoutOrder = TabIndex,
-      Size = UDim2.new(1, 0, 0, 30),
+      Size = UDim2.new(1, 0, 0, 32),
+      ClipsDescendants = false,
       ZIndex = 5,
     }, ScrollTab)
-    Custom:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, Tab)
+    Custom:Create("UICorner", { CornerRadius = UDim.new(0, 6) }, Tab)
+
+    local TabStroke = Custom:Create("UIStroke", {
+      Color = CONFIG.Theme.Stroke,
+      Thickness = 1,
+      Transparency = 0.85,
+      ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+    }, Tab)
 
     local TabButton = Custom:Create("TextButton", {
-      Font = CONFIG.Font.Bold, Text = "",
+      Font = CONFIG.Font.Regular, Text = "",
       BackgroundTransparency = 1, BorderSizePixel = 0,
       Size = UDim2.new(1, 0, 1, 0),
       ZIndex = 7,
     }, Tab)
 
-    Custom:Create("TextLabel", {
-      Font = CONFIG.Font.Bold, Text = _Name, TextColor3 = CONFIG.Theme.Text,
-      TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left,
-      TextTruncate = Enum.TextTruncate.AtEnd,
-      BackgroundTransparency = 1, BorderSizePixel = 0,
-      Size = UDim2.new(1, Icon ~= "" and -30 or -10, 1, 0),
-      Position = UDim2.new(0, Icon ~= "" and 30 or 10, 0, 0),
-      ZIndex = 6,
-    }, Tab)
-
+    local TabIcon = nil
     if Icon ~= "" then
-      Custom:Create("ImageLabel", {
-        Image = Icon, BackgroundTransparency = 1, BorderSizePixel = 0,
-        Position = UDim2.new(0, 9, 0, 7), Size = UDim2.fromOffset(16, 16),
+      TabIcon = Custom:Create("ImageLabel", {
+        Name = "TabIcon",
+        Image = Icon,
+        ImageColor3 = CONFIG.Theme.Text,
+        BackgroundTransparency = 1, BorderSizePixel = 0,
+        Position = UDim2.new(0, 10, 0, 8),
+        Size = UDim2.fromOffset(16, 16),
         ZIndex = 6,
       }, Tab)
     end
 
+    local TabLabel = Custom:Create("TextLabel", {
+      Name = "TabLabel",
+      Font = CONFIG.Font.Bold, Text = _Name, TextColor3 = CONFIG.Theme.Text,
+      TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left,
+      TextTruncate = Enum.TextTruncate.AtEnd,
+      BackgroundTransparency = 1, BorderSizePixel = 0,
+      Size = UDim2.new(1, Icon ~= "" and -34 or -14, 1, 0),
+      Position = UDim2.new(0, Icon ~= "" and 34 or 12, 0, 0),
+      ZIndex = 6,
+    }, Tab)
+
     local Bar = Custom:Create("Frame", {
       Name = "ChooseFrame",
       AnchorPoint = Vector2.new(0, 0.5),
-      BackgroundColor3 = CONFIG.Theme.Primary, BorderSizePixel = 0,
-      Position = UDim2.new(0, 2, 0.5, 0),
-      Size = UDim2.new(0, 1, 0, 0),
+      BackgroundColor3 = CONFIG.Theme.Primary,
+      BorderSizePixel = 0,
+      Position = UDim2.new(0, 3, 0.5, 0),
+      Size = UDim2.new(0, 0, 0, 20),
       ZIndex = 6,
     }, Tab)
+    Custom:Create("UICorner", { CornerRadius = UDim.new(1, 0) }, Bar)
+
     local BarStroke = Custom:Create("UIStroke", {
       Color = CONFIG.Theme.Primary, Thickness = 1.6, Transparency = 1,
     }, Bar)
-    Custom:Create("UICorner", {}, Bar)
 
     local TabObj = {
-      Name = _Name, Frame = Tab, Page = ScrolLayers, Bar = Bar, Stroke = BarStroke,
+      Name   = _Name,
+      Frame  = Tab,
+      Page   = ScrolLayers,
+      Bar    = Bar,
+      Stroke = TabStroke,
+      Icon   = TabIcon,
+      Label  = TabLabel,
     }
     table.insert(AllTabs, TabObj)
 
@@ -962,6 +1121,8 @@ function Speed_Library:CreateWindow(Config)
         SectionTitle = SectionTitle[1] or SectionTitle.Title
       end
       SectionTitle = tostring(SectionTitle or "")
+      local SectionNamespace = MakeKey(TabNamespace, SectionTitle)
+
       local OpenSection = OpenDefault == true
       CountSection += 1
 
@@ -1010,7 +1171,7 @@ function Speed_Library:CreateWindow(Config)
 
       Custom:Create("TextLabel", {
         Font = CONFIG.Font.Bold, Text = SectionTitle,
-        TextColor3 = Color3.fromRGB(230, 230, 230), TextSize = 13,
+        TextColor3 = CONFIG.Theme.Text, TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextTruncate = Enum.TextTruncate.AtEnd,
         AnchorPoint = Vector2.new(0, 0.5),
@@ -1030,9 +1191,9 @@ function Speed_Library:CreateWindow(Config)
       Custom:Create("UICorner", {}, SectionDecideFrame)
       Custom:Create("UIGradient", {
         Color = ColorSequence.new {
-          ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 20)),
+          ColorSequenceKeypoint.new(0, CONFIG.Theme.Background),
           ColorSequenceKeypoint.new(0.5, CONFIG.Theme.Primary),
-          ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20)),
+          ColorSequenceKeypoint.new(1, CONFIG.Theme.Background),
         },
       }, SectionDecideFrame)
 
@@ -1082,6 +1243,14 @@ function Speed_Library:CreateWindow(Config)
         return ItemCount
       end
 
+      -- helper: bikin key unik untuk save
+      local function ItemKey(ItemTitle, ItemType, CustomFlag)
+        if CustomFlag and type(CustomFlag) == "string" and CustomFlag ~= "" then
+          return MakeKey(WindowNamespace, "FLAG", CustomFlag)
+        end
+        return MakeKey(SectionNamespace, ItemType, ItemTitle)
+      end
+
       function Item:AddParagraph(PConfig)
         local PTitle   = Get(PConfig, 1, "Title", "")
         local PContent = Get(PConfig, 2, "Content", "")
@@ -1113,7 +1282,7 @@ function Speed_Library:CreateWindow(Config)
 
         local SepLabel = Custom:Create("TextLabel", {
           Font = CONFIG.Font.Bold, Text = STitle,
-          TextColor3 = Color3.fromRGB(231, 231, 231),
+          TextColor3 = CONFIG.Theme.Text,
           TextStrokeColor3 = Color3.fromRGB(0, 0, 0),
           TextStrokeTransparency = 0.8, TextSize = 14,
           TextXAlignment = Enum.TextXAlignment.Left,
@@ -1190,12 +1359,20 @@ function Speed_Library:CreateWindow(Config)
         return Funcs
       end
 
+      -- ═══════ Toggle (dengan AutoSave) ═══════
       function Item:AddToggle(TConfig)
         local TTitle   = Get(TConfig, 1, "Title", "")
         local TContent = Get(TConfig, 2, "Content", "")
         local Default  = Get(TConfig, 3, "Default", false)
         local Callback = Get(TConfig, 4, "Callback", function() end)
-        local Funcs = { Value = Default == true }
+        local Flag     = Get(TConfig, 5, "Flag", nil)
+
+        local key = ItemKey(TTitle, "Toggle", Flag)
+        local Saved = AutoSave:Get(key)
+        local Initial = (Saved ~= nil) and (Saved == true) or (Default == true)
+
+        local Funcs = { Value = Initial }
+        local IsInitial = true
 
         local Base = NewItemBase(SectionAdd, NextOrder(), TTitle, TContent, 70)
         AttachCommon(Funcs, Base)
@@ -1223,7 +1400,7 @@ function Speed_Library:CreateWindow(Config)
         }, FeatureFrame2)
 
         local ToggleCircle = Custom:Create("Frame", {
-          BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+          BackgroundColor3 = ContrastColor(CONFIG.Theme.Primary),
           BorderSizePixel = 0,
           Size = UDim2.fromOffset(14, 14),
           Position = UDim2.new(0, 0, 0, 0),
@@ -1233,7 +1410,7 @@ function Speed_Library:CreateWindow(Config)
 
         local function ToggleAnimation(isOn)
           Tween(Base.Title, {
-            TextColor3 = isOn and CONFIG.Theme.Primary or Color3.fromRGB(230, 230, 230),
+            TextColor3 = isOn and CONFIG.Theme.Primary or CONFIG.Theme.Text,
           }, 0.2)
           Tween(ToggleCircle, {
             Position = isOn and UDim2.new(0, 15, 0, 0) or UDim2.new(0, 0, 0, 0),
@@ -1248,10 +1425,15 @@ function Speed_Library:CreateWindow(Config)
           }, 0.2)
         end
 
-        function Funcs:Set(Value)
+        function Funcs:Set(Value, Silent)
           Funcs.Value = Value == true
           ToggleAnimation(Funcs.Value)
-          SafeCall(Callback, Funcs.Value)
+          if not IsInitial then
+            AutoSave:Set(key, Funcs.Value)
+          end
+          if not Silent then
+            SafeCall(Callback, Funcs.Value)
+          end
         end
 
         ToggleButton.Activated:Connect(function()
@@ -1260,9 +1442,11 @@ function Speed_Library:CreateWindow(Config)
         end)
 
         Funcs:Set(Funcs.Value)
+        IsInitial = false
         return Funcs
       end
 
+      -- ═══════ Slider (dengan AutoSave) ═══════
       function Item:AddSlider(SConfig)
         local STitle    = Get(SConfig, 1, "Title", "")
         local SContent  = Get(SConfig, 2, "Content", "")
@@ -1271,11 +1455,17 @@ function Speed_Library:CreateWindow(Config)
         local Max       = tonumber(Get(SConfig, 5, "Max", 100)) or 100
         local Default   = tonumber(Get(SConfig, 6, "Default", Min)) or Min
         local Callback  = Get(SConfig, 7, "Callback", function() end)
+        local Flag      = Get(SConfig, 8, "Flag", nil)
 
         if Increment <= 0 then Increment = 1 end
         if Max <= Min then Max = Min + 1 end
 
-        local Funcs = { Value = Default }
+        local key = ItemKey(STitle, "Slider", Flag)
+        local Saved = tonumber(AutoSave:Get(key))
+        local Initial = Saved or Default
+
+        local Funcs = { Value = Initial, Min = Min, Max = Max, Increment = Increment }
+        local IsInitial = true
 
         local decimals = 0
         local frac = tostring(Increment):match("%.(%d+)")
@@ -1305,7 +1495,7 @@ function Speed_Library:CreateWindow(Config)
 
         local TextBox = Custom:Create("TextBox", {
           Font = CONFIG.Font.Bold, Text = tostring(Default),
-          TextColor3 = Color3.fromRGB(20, 20, 20),
+          TextColor3 = ContrastColor(CONFIG.Theme.Primary),
           TextSize = 12, ClearTextOnFocus = false,
           BackgroundTransparency = 1, BorderSizePixel = 0,
           Size = UDim2.new(1, 0, 1, 0),
@@ -1357,6 +1547,9 @@ function Speed_Library:CreateWindow(Config)
           Funcs.Value = Value
           TextBox.Text = tostring(Value)
           SliderFill.Size = UDim2.fromScale((Value - Min) / (Max - Min), 1)
+          if not IsInitial then
+            AutoSave:Set(key, Value)
+          end
           if Fire then SafeCall(Callback, Value) end
         end
 
@@ -1388,6 +1581,7 @@ function Speed_Library:CreateWindow(Config)
             or Input.UserInputType == Enum.UserInputType.Touch) then
             Dragging = false
             ScrolLayers.ScrollingEnabled = true
+            AutoSave:Set(key, Funcs.Value)
             SafeCall(Callback, Funcs.Value)
           end
         end)
@@ -1406,16 +1600,26 @@ function Speed_Library:CreateWindow(Config)
           end
         end)
 
-        Funcs:Set(Default, true)
+        Funcs:Set(Initial, false)
+        IsInitial = false
+        SafeCall(Callback, Initial)
         return Funcs
       end
 
+      -- ═══════ Input (dengan AutoSave) ═══════
       function Item:AddInput(IConfig)
         local ITitle   = Get(IConfig, 1, "Title", "")
         local IContent = Get(IConfig, 2, "Content", "")
         local Default  = tostring(Get(IConfig, 3, "Default", ""))
         local Callback = Get(IConfig, 4, "Callback", function() end)
-        local Funcs = { Value = Default }
+        local Flag     = Get(IConfig, 5, "Flag", nil)
+
+        local key = ItemKey(ITitle, "Input", Flag)
+        local Saved = AutoSave:Get(key)
+        local Initial = (Saved ~= nil) and tostring(Saved) or Default
+
+        local Funcs = { Value = Initial }
+        local IsInitial = true
 
         local Base = NewItemBase(SectionAdd, NextOrder(), ITitle, IContent, 180)
         AttachCommon(Funcs, Base)
@@ -1449,6 +1653,9 @@ function Speed_Library:CreateWindow(Config)
           Value = tostring(Value or "")
           InputTextBox.Text = Value
           Funcs.Value = Value
+          if not IsInitial then
+            AutoSave:Set(key, Value)
+          end
           SafeCall(Callback, Value)
         end
 
@@ -1456,10 +1663,12 @@ function Speed_Library:CreateWindow(Config)
           Funcs:Set(InputTextBox.Text)
         end)
 
-        Funcs:Set(Default)
+        Funcs:Set(Initial)
+        IsInitial = false
         return Funcs
       end
 
+      -- ═══════ Dropdown (dengan AutoSave) ═══════
       function Item:AddDropdown(DConfig)
         local DTitle   = Get(DConfig, 1, "Title", "")
         local DContent = Get(DConfig, 2, "Content", "")
@@ -1467,6 +1676,7 @@ function Speed_Library:CreateWindow(Config)
         local Options  = Get(DConfig, 4, "Options", {})
         local Default  = Get(DConfig, 5, "Default", {})
         local Callback = Get(DConfig, 6, "Callback", function() end)
+        local Flag     = Get(DConfig, 7, "Flag", nil)
 
         if type(Options) ~= "table" then Options = {} end
         if type(Default) == "string" and Default ~= "" then
@@ -1475,7 +1685,18 @@ function Speed_Library:CreateWindow(Config)
           Default = {}
         end
 
+        local key = ItemKey(DTitle, "Dropdown", Flag)
+        local SavedRaw = AutoSave:Get(key)
+        local Saved = nil
+        if type(SavedRaw) == "table" then
+          Saved = {}
+          for _, v in ipairs(SavedRaw) do
+            if type(v) == "string" then table.insert(Saved, v) end
+          end
+        end
+
         local Funcs = { Value = {}, Options = {} }
+        local IsInitial = true
 
         local Base = NewItemBase(SectionAdd, NextOrder(), DTitle, DContent, 180)
         AttachCommon(Funcs, Base)
@@ -1537,8 +1758,8 @@ function Speed_Library:CreateWindow(Config)
           PlaceholderColor3 = Color3.fromRGB(120, 120, 120),
           Text = "", TextColor3 = CONFIG.Theme.Text, TextSize = 12,
           ClearTextOnFocus = false,
-          BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-          BackgroundTransparency = 0.5,
+          BackgroundColor3 = CONFIG.Theme.Background,
+          BackgroundTransparency = 0.3,
           BorderColor3 = CONFIG.Theme.Stroke, BorderSizePixel = 1,
           LayoutOrder = -1,
           Size = UDim2.new(1, 0, 0, 22),
@@ -1570,6 +1791,8 @@ function Speed_Library:CreateWindow(Config)
           OpenDropdownPanel(ScrollSelect)
         end)
 
+        local PlaceholderText = "Select Options"
+
         function Funcs:Clear()
           for _, c in ipairs(ScrollSelect:GetChildren()) do
             if c.Name == "Option" then c:Destroy() end
@@ -1577,8 +1800,18 @@ function Speed_Library:CreateWindow(Config)
           Funcs.Value = {}
           Funcs.Options = {}
           DropCount = 0
-          OptionSelecting.Text = "Select Options"
+          OptionSelecting.Text = PlaceholderText
         end
+
+        function Funcs:SetPlaceholder(Text)
+          PlaceholderText = tostring(Text or "Select Options")
+          if #Funcs.Value == 0 then
+            OptionSelecting.Text = PlaceholderText
+          end
+        end
+
+        function Funcs:GetOptions() return table.clone(Funcs.Options) end
+        function Funcs:GetValue()   return table.clone(Funcs.Value)   end
 
         function Funcs:Set(Value, NoCallback)
           if Value == nil then Value = Funcs.Value end
@@ -1606,7 +1839,11 @@ function Speed_Library:CreateWindow(Config)
           end
 
           local Text = table.concat(newVal, ", ")
-          OptionSelecting.Text = Text ~= "" and Text or "Select Options"
+          OptionSelecting.Text = Text ~= "" and Text or PlaceholderText
+
+          if not IsInitial then
+            AutoSave:Set(key, Funcs.Value)
+          end
           if not NoCallback then SafeCall(Callback, Funcs.Value) end
         end
 
@@ -1626,7 +1863,7 @@ function Speed_Library:CreateWindow(Config)
           Custom:Create("UICorner", { CornerRadius = UDim.new(0, 3) }, Option)
 
           local OptionButton = Custom:Create("TextButton", {
-            Font = CONFIG.Font.Bold, Text = "",
+            Font = CONFIG.Font.Regular, Text = "",
             BackgroundTransparency = 1, BorderSizePixel = 0,
             Size = UDim2.new(1, 0, 1, 0),
             ZIndex = 10,
@@ -1673,24 +1910,41 @@ function Speed_Library:CreateWindow(Config)
           DropCount += 1
         end
 
-        function Funcs:Refresh(RefreshList, Selecting)
-          RefreshList = type(RefreshList) == "table" and RefreshList or {}
+        function Funcs:Refresh(NewList, Selecting, Opts)
+          NewList = type(NewList) == "table" and NewList or {}
+          Opts    = type(Opts) == "table" and Opts or {}
+
+          if Selecting == nil and Opts.KeepSelection then
+            Selecting = {}
+            for _, v in ipairs(Funcs.Value) do
+              if table.find(NewList, v) then table.insert(Selecting, v) end
+            end
+          end
           Selecting = Selecting or {}
+
           Funcs:Clear()
-          for _, Drop in ipairs(RefreshList) do
+          for _, Drop in ipairs(NewList) do
             Funcs:AddOption(Drop)
           end
-          Funcs:Set(Selecting)
+          Funcs:Set(Selecting, Opts.NoCallback == true)
         end
 
-        Funcs:Refresh(Options, Default)
+        function Funcs:SetOptions(NewList, Selecting, Opts)
+          return Funcs:Refresh(NewList, Selecting, Opts)
+        end
+
+        -- pilih initial: saved dulu, kalau ngga ada pakai default
+        local InitialSelect = Saved or Default
+        Funcs:Refresh(Options, InitialSelect)
+        IsInitial = false
         return Funcs
       end
 
-      -- ═══════════ AddPanel (Drop Panel) ═══════════
+      -- ═══════ AddPanel ═══════
       function Item:AddPanel(PConfig)
         local PTitle   = Get(PConfig, 1, "Title", "")
         local PContent = Get(PConfig, 2, "Content", "")
+        local PanelNamespace = MakeKey(SectionNamespace, "Panel", PTitle)
         local Funcs_Panel = {}
 
         local Base = NewItemBase(SectionAdd, NextOrder(), PTitle, PContent, 50)
@@ -1791,7 +2045,13 @@ function Speed_Library:CreateWindow(Config)
           local t   = tostring(Get(cfg, 1, "Title", ""))
           local def = Get(cfg, 2, "Default", false) == true
           local cb  = Get(cfg, 3, "Callback", function() end)
-          local state = { Value = def }
+
+          local key = MakeKey(PanelNamespace, "Toggle", t)
+          local Saved = AutoSave:Get(key)
+          local Initial = (Saved ~= nil) and (Saved == true) or def
+
+          local state = { Value = Initial }
+          local IsInitial = true
           SubCount += 1
 
           local Btn = Custom:Create("TextButton", {
@@ -1812,6 +2072,9 @@ function Speed_Library:CreateWindow(Config)
             state.Value = Value == true
             Btn.Text = "  " .. t .. "   [" .. (state.Value and "ON" or "OFF") .. "]"
             Btn.TextColor3 = state.Value and CONFIG.Theme.Primary or CONFIG.Theme.Text
+            if not IsInitial then
+              AutoSave:Set(key, state.Value)
+            end
             SafeCall(cb, state.Value)
           end
 
@@ -1820,7 +2083,8 @@ function Speed_Library:CreateWindow(Config)
             state:Set(not state.Value)
           end)
 
-          state:Set(def)
+          state:Set(Initial)
+          IsInitial = false
           return state
         end
 
@@ -1833,7 +2097,6 @@ function Speed_Library:CreateWindow(Config)
     return Sections
   end
 
-  -- ═══ Fungsi window ═══
   function Tabs:Show() ShowWindow() end
   function Tabs:Hide() HideWindow() end
   function Tabs:Toggle()
@@ -1850,7 +2113,31 @@ end
 function Speed_Library:SetTheme(t) Custom:SetTheme(t) end
 function Speed_Library:SetFont(f)  Custom:SetFont(f)  end
 function Speed_Library:GetConfig() return Custom:GetConfig() end
+
+-- API Auto Save
+function Speed_Library:SetAutoSave(bool)
+  AutoSave.Enabled = bool == true
+  if AutoSave.Enabled then AutoSave:Flush() end
+end
+
+function Speed_Library:SaveNow()
+  AutoSave:Flush()
+end
+
+function Speed_Library:ClearSave()
+  AutoSave:Clear()
+end
+
+function Speed_Library:SetSaveFile(name)
+  AutoSave:SetFile(name)
+end
+
+function Speed_Library:GetSaveData()
+  return AutoSave.Data
+end
+
 function Speed_Library:Destroy()
+  AutoSave:Flush()
   if Env.KingAkbarUI_Cleanup then Env.KingAkbarUI_Cleanup() end
   Speed_Library.Unloaded = true
 end
