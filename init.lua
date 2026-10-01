@@ -10,6 +10,7 @@
     + Dynamic dropdown (SetOptions, SetPlaceholder, GetOptions)
     + Wrapper FuncsV3 (shortcut + storeFn eksternal)
     + Anti-double execution + touch support
+    + Floating button di kiri atas
 
   CONTOH PEMAKAIAN:
     local Lib = loadstring(game:HttpGet("URL_RAW_FILE_INI"))()
@@ -133,6 +134,12 @@ local CONFIG = {
   },
   Behavior = {
     AntiAFK = true,
+  },
+  -- ⬇⬇⬇ POSISI FLOATING BUTTON (kiri atas) ⬇⬇⬇
+  Floating = {
+    Position = UDim2.new(0, 20, 0, 120),  -- 20px dari kiri, 120px dari atas
+    Size     = UDim2.fromOffset(45, 45),
+    Radius   = UDim.new(0, 9),
   },
 }
 
@@ -414,7 +421,7 @@ local function MakeDraggable(Handle, Object, Bind)
 end
 
 -- ═══════════════════════════════════════════════════
---  FLOATING OPEN/CLOSE BUTTON
+--  FLOATING OPEN/CLOSE BUTTON (posisi di KIRI ATAS)
 -- ═══════════════════════════════════════════════════
 local function CreateFloatingButton()
   local Gui = NewScreenGui("KingAkbarUI_Floating", 20)
@@ -425,13 +432,14 @@ local function CreateFloatingButton()
     BackgroundTransparency = 0.4,
     BorderSizePixel = 0,
     AutoButtonColor = false,
-    Position = UDim2.new(0.85, 0, 0.05, 0),
-    Size = UDim2.fromOffset(45, 45),
+    -- ⬇⬇ POSISI DI KIRI ATAS (di bawah native button Roblox)
+    Position = CONFIG.Floating.Position,
+    Size = CONFIG.Floating.Size,
     Image = CONFIG.Assets.FloatingButton,
     Visible = false,
   }, Gui)
 
-  Custom:Create("UICorner", { Name = "MainCorner", CornerRadius = UDim.new(0, 9) }, Btn)
+  Custom:Create("UICorner", { Name = "MainCorner", CornerRadius = CONFIG.Floating.Radius }, Btn)
 
   local DidMove = MakeDraggable(Btn, Btn, BindLib)
   return Btn, DidMove
@@ -1264,6 +1272,9 @@ function Speed_Library:CreateWindow(Config)
         return Funcs
       end
 
+      -- alias spelling bener
+      Item.AddSeparator = Item.AddSeperator
+
       function Item:AddLine()
         local Funcs = {}
         local Line = Custom:Create("Frame", {
@@ -1328,7 +1339,6 @@ function Speed_Library:CreateWindow(Config)
         local SaveKeyName = Get(TConfig, 5, "SaveKey", nil)
         local Funcs = { Value = Default == true }
 
-        -- load dari save kalau ada
         if SaveKeyName and SaveData[SaveKeyName] ~= nil then
           Funcs.Value = SaveData[SaveKeyName] == true
         end
@@ -2019,7 +2029,6 @@ function Speed_Library:ListThemes() return Custom:ListThemes() end
 function Speed_Library:SetFont(f)  Custom:SetFont(f)  end
 function Speed_Library:GetConfig() return Custom:GetConfig() end
 
--- Auto-save helpers
 function Speed_Library:GetSave() return SaveData end
 function Speed_Library:SetSave(key, val) SaveKey(key, val) end
 function Speed_Library:ClearSave()
