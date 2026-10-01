@@ -168,6 +168,12 @@ local function TextWidth(Text, Size, Font)
   return #Text * Size * 0.55
 end
 
+-- warna teks/knob yang kontras terhadap warna latar (agar semua tema terbaca)
+local function ContrastColor(C)
+  local lum = 0.299 * C.R + 0.587 * C.G + 0.114 * C.B
+  return lum > 0.6 and Color3.fromRGB(20, 20, 20) or Color3.fromRGB(255, 255, 255)
+end
+
 local Custom = {} do
   Custom.ColorRGB = CONFIG.Theme.Primary
   Custom.Config   = CONFIG
@@ -182,8 +188,9 @@ local Custom = {} do
   end
 
   function Custom:EnabledAFK()
-    if not CONFIG.Behavior.AntiAFK then return end
+    -- selalu connect; cek config saat event terjadi (supaya AntiAFK = false dari GetConfig() berfungsi)
     BindLib(Player.Idled, function()
+      if not CONFIG.Behavior.AntiAFK then return end
       pcall(function()
         VirtualUser:CaptureController()
         VirtualUser:ClickButton2(Vector2.new())
@@ -361,7 +368,7 @@ local function NewItemBase(Parent, Order, Title, Content, Reserve)
   local TitleLabel = Custom:Create("TextLabel", {
     Name = "ItemTitle",
     Font = CONFIG.Font.Bold, Text = tostring(Title), TextSize = 13,
-    TextColor3 = Color3.fromRGB(231, 231, 231),
+    TextColor3 = CONFIG.Theme.Text,
     TextXAlignment = Enum.TextXAlignment.Left,
     TextYAlignment = Enum.TextYAlignment.Center,
     TextTruncate = Enum.TextTruncate.AtEnd,
@@ -574,6 +581,7 @@ function Speed_Library:CreateWindow(Config)
   end
 
   local WindowGui = NewScreenGui("KingAkbarUI_Window", 10)
+  Open_Close.Image = CONFIG.Assets.FloatingButton -- ikuti config terbaru (sebelum CreateWindow)
 
   local DropShadowHolder = Custom:Create("Frame", {
     Name = "Holder",
@@ -1018,7 +1026,7 @@ function Speed_Library:CreateWindow(Config)
 
       Custom:Create("TextLabel", {
         Font = CONFIG.Font.Bold, Text = SectionTitle,
-        TextColor3 = Color3.fromRGB(230, 230, 230), TextSize = 13,
+        TextColor3 = CONFIG.Theme.Text, TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextTruncate = Enum.TextTruncate.AtEnd,
         AnchorPoint = Vector2.new(0, 0.5),
@@ -1038,9 +1046,9 @@ function Speed_Library:CreateWindow(Config)
       Custom:Create("UICorner", {}, SectionDecideFrame)
       Custom:Create("UIGradient", {
         Color = ColorSequence.new {
-          ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 20)),
+          ColorSequenceKeypoint.new(0, CONFIG.Theme.Background),
           ColorSequenceKeypoint.new(0.5, CONFIG.Theme.Primary),
-          ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20)),
+          ColorSequenceKeypoint.new(1, CONFIG.Theme.Background),
         },
       }, SectionDecideFrame)
 
@@ -1122,7 +1130,7 @@ function Speed_Library:CreateWindow(Config)
 
         local SepLabel = Custom:Create("TextLabel", {
           Font = CONFIG.Font.Bold, Text = STitle,
-          TextColor3 = Color3.fromRGB(231, 231, 231),
+          TextColor3 = CONFIG.Theme.Text,
           TextStrokeColor3 = Color3.fromRGB(0, 0, 0),
           TextStrokeTransparency = 0.8, TextSize = 14,
           TextXAlignment = Enum.TextXAlignment.Left,
@@ -1232,7 +1240,7 @@ function Speed_Library:CreateWindow(Config)
         }, FeatureFrame2)
 
         local ToggleCircle = Custom:Create("Frame", {
-          BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+          BackgroundColor3 = ContrastColor(CONFIG.Theme.Primary),
           BorderSizePixel = 0,
           Size = UDim2.fromOffset(14, 14),
           Position = UDim2.new(0, 0, 0, 0),
@@ -1242,7 +1250,7 @@ function Speed_Library:CreateWindow(Config)
 
         local function ToggleAnimation(isOn)
           Tween(Base.Title, {
-            TextColor3 = isOn and CONFIG.Theme.Primary or Color3.fromRGB(230, 230, 230),
+            TextColor3 = isOn and CONFIG.Theme.Primary or CONFIG.Theme.Text,
           }, 0.2)
           Tween(ToggleCircle, {
             Position = isOn and UDim2.new(0, 15, 0, 0) or UDim2.new(0, 0, 0, 0),
@@ -1314,7 +1322,7 @@ function Speed_Library:CreateWindow(Config)
 
         local TextBox = Custom:Create("TextBox", {
           Font = CONFIG.Font.Bold, Text = tostring(Default),
-          TextColor3 = Color3.fromRGB(20, 20, 20),
+          TextColor3 = ContrastColor(CONFIG.Theme.Primary),
           TextSize = 12, ClearTextOnFocus = false,
           BackgroundTransparency = 1, BorderSizePixel = 0,
           Size = UDim2.new(1, 0, 1, 0),
@@ -1548,8 +1556,8 @@ function Speed_Library:CreateWindow(Config)
           PlaceholderColor3 = Color3.fromRGB(120, 120, 120),
           Text = "", TextColor3 = CONFIG.Theme.Text, TextSize = 12,
           ClearTextOnFocus = false,
-          BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-          BackgroundTransparency = 0.5,
+          BackgroundColor3 = CONFIG.Theme.Background,
+          BackgroundTransparency = 0.3,
           BorderColor3 = CONFIG.Theme.Stroke, BorderSizePixel = 1,
           LayoutOrder = -1,
           Size = UDim2.new(1, 0, 0, 22),
