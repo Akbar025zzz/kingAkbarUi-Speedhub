@@ -1,29 +1,26 @@
 --[[
   ╔══════════════════════════════════════════════════╗
-  ║          KING AKBAR UI LIBRARY v1.5              ║
+  ║          KING AKBAR UI LIBRARY v1.6              ║
   ║    github.com/Akbar025zzz/kingAkbarUi-Speedhub   ║
   ╚══════════════════════════════════════════════════╝
 
-  FITUR v1.5:
-    ✔ Auto Save / Auto Load (toggle, slider, input, dropdown)
+  FITUR v1.6:
+    ✔ Theme Registry built-in (10 preset)
+    ✔ Live theme switching (SetPreset / SetTheme)
+    ✔ Auto Save / Auto Load
     ✔ Dynamic Dropdown Refresh
     ✔ Tab kotak profesional
     ✔ Anti-dup execute
 
   CONTOH:
     local Lib = loadstring(game:HttpGet("URL_RAW_FILE_INI"))()
-    local Win = Lib:CreateWindow({ "King Akbar", "v1.5", 100, UDim2.fromOffset(420, 280) })
+    Lib:SetPreset("Cyberpunk")   -- ganti tema kapan aja
+    print(Lib:GetThemes())       -- {"BloodRed", "Cyberpunk", ...}
+
+    local Win = Lib:CreateWindow({ "King Akbar", "v1.6", 110, UDim2.fromOffset(520, 320) })
     local Tab = Win:CreateTab({ "Main", "rbxassetid://7734010488" })
     local Sec = Tab:AddSection("Farm", true)
-
     Sec:AddToggle({ "Auto Farm", "Farm otomatis", false, function(v) print(v) end })
-    Sec:AddSlider({ "WalkSpeed", "", 1, 16, 200, 16, function(v) print(v) end })
-
-    -- Method manual:
-    Lib:SetAutoSave(true)      -- default true
-    Lib:SaveNow()              -- paksa save sekarang
-    Lib:ClearSave()            -- hapus semua data tersimpan
-    Lib:SetSaveFile("custom")  -- ganti nama file (harus sebelum CreateWindow)
 ]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -91,15 +88,101 @@ pcall(function()
 end)
 
 -- ═══════════════════════════════════════════════════
+--  THEME REGISTRY
+-- ═══════════════════════════════════════════════════
+local Themes = {}
+
+Themes.Dark = {
+  Primary = Color3.fromRGB(255,255,255), Panel = Color3.fromRGB(255,255,255),
+  Background = Color3.fromRGB(10,10,10), Secondary = Color3.fromRGB(25,25,25),
+  Text = Color3.fromRGB(255,255,255), SubText = Color3.fromRGB(160,160,160),
+  Stroke = Color3.fromRGB(70,70,70), Divider = Color3.fromRGB(80,80,80),
+  LineColor = Color3.fromRGB(110,110,110),
+  BackgroundTint = Color3.fromRGB(0,0,0), BackgroundTintTrans = 0.3,
+}
+Themes.Neon = {
+  Primary = Color3.fromRGB(0,255,180), Panel = Color3.fromRGB(255,255,255),
+  Background = Color3.fromRGB(10,10,20), Secondary = Color3.fromRGB(20,20,40),
+  Text = Color3.fromRGB(0,255,180), SubText = Color3.fromRGB(120,200,180),
+  Stroke = Color3.fromRGB(0,200,140), Divider = Color3.fromRGB(0,180,130),
+  LineColor = Color3.fromRGB(0,220,160),
+  BackgroundTint = Color3.fromRGB(0,20,15), BackgroundTintTrans = 0.35,
+}
+Themes.Cyberpunk = {
+  Primary = Color3.fromRGB(255,0,200), Panel = Color3.fromRGB(255,255,255),
+  Background = Color3.fromRGB(15,5,30), Secondary = Color3.fromRGB(40,10,60),
+  Text = Color3.fromRGB(255,200,255), SubText = Color3.fromRGB(180,130,220),
+  Stroke = Color3.fromRGB(255,0,200), Divider = Color3.fromRGB(200,0,180),
+  LineColor = Color3.fromRGB(220,50,220),
+  BackgroundTint = Color3.fromRGB(30,0,20), BackgroundTintTrans = 0.35,
+}
+Themes.BloodRed = {
+  Primary = Color3.fromRGB(255,30,30), Panel = Color3.fromRGB(255,255,255),
+  Background = Color3.fromRGB(10,5,5), Secondary = Color3.fromRGB(30,10,10),
+  Text = Color3.fromRGB(255,255,255), SubText = Color3.fromRGB(180,120,120),
+  Stroke = Color3.fromRGB(150,30,30), Divider = Color3.fromRGB(100,20,20),
+  LineColor = Color3.fromRGB(180,40,40),
+  BackgroundTint = Color3.fromRGB(20,0,0), BackgroundTintTrans = 0.3,
+}
+Themes.Gold = {
+  Primary = Color3.fromRGB(255,200,50), Panel = Color3.fromRGB(255,255,255),
+  Background = Color3.fromRGB(15,12,5), Secondary = Color3.fromRGB(35,28,15),
+  Text = Color3.fromRGB(255,240,200), SubText = Color3.fromRGB(200,170,100),
+  Stroke = Color3.fromRGB(200,160,40), Divider = Color3.fromRGB(150,120,30),
+  LineColor = Color3.fromRGB(200,170,60),
+  BackgroundTint = Color3.fromRGB(20,15,0), BackgroundTintTrans = 0.3,
+}
+Themes.Purple = {
+  Primary = Color3.fromRGB(180,100,255), Panel = Color3.fromRGB(255,255,255),
+  Background = Color3.fromRGB(15,10,25), Secondary = Color3.fromRGB(35,20,55),
+  Text = Color3.fromRGB(240,230,255), SubText = Color3.fromRGB(170,140,200),
+  Stroke = Color3.fromRGB(120,70,180), Divider = Color3.fromRGB(100,60,150),
+  LineColor = Color3.fromRGB(140,90,200),
+  BackgroundTint = Color3.fromRGB(15,0,30), BackgroundTintTrans = 0.35,
+}
+Themes.Ocean = {
+  Primary = Color3.fromRGB(0,200,255), Panel = Color3.fromRGB(255,255,255),
+  Background = Color3.fromRGB(5,15,25), Secondary = Color3.fromRGB(15,35,55),
+  Text = Color3.fromRGB(220,240,255), SubText = Color3.fromRGB(120,180,220),
+  Stroke = Color3.fromRGB(0,130,200), Divider = Color3.fromRGB(20,100,160),
+  LineColor = Color3.fromRGB(40,140,200),
+  BackgroundTint = Color3.fromRGB(0,10,25), BackgroundTintTrans = 0.35,
+}
+Themes.Light = {
+  Primary = Color3.fromRGB(0,100,220), Panel = Color3.fromRGB(0,0,0),
+  Background = Color3.fromRGB(240,240,245), Secondary = Color3.fromRGB(210,210,220),
+  Text = Color3.fromRGB(20,20,30), SubText = Color3.fromRGB(100,100,110),
+  Stroke = Color3.fromRGB(180,180,190), Divider = Color3.fromRGB(200,200,210),
+  LineColor = Color3.fromRGB(160,160,170),
+  BackgroundTint = Color3.fromRGB(255,255,255), BackgroundTintTrans = 0.15,
+}
+Themes.Matrix = {
+  Primary = Color3.fromRGB(0,255,0), Panel = Color3.fromRGB(255,255,255),
+  Background = Color3.fromRGB(0,8,0), Secondary = Color3.fromRGB(0,25,0),
+  Text = Color3.fromRGB(0,255,0), SubText = Color3.fromRGB(0,180,0),
+  Stroke = Color3.fromRGB(0,150,0), Divider = Color3.fromRGB(0,100,0),
+  LineColor = Color3.fromRGB(0,200,0),
+  BackgroundTint = Color3.fromRGB(0,15,0), BackgroundTintTrans = 0.35,
+}
+Themes.Sunset = {
+  Primary = Color3.fromRGB(255,130,30), Panel = Color3.fromRGB(255,255,255),
+  Background = Color3.fromRGB(25,10,15), Secondary = Color3.fromRGB(50,20,25),
+  Text = Color3.fromRGB(255,230,200), SubText = Color3.fromRGB(220,160,130),
+  Stroke = Color3.fromRGB(180,80,40), Divider = Color3.fromRGB(130,60,30),
+  LineColor = Color3.fromRGB(200,100,50),
+  BackgroundTint = Color3.fromRGB(30,5,0), BackgroundTintTrans = 0.35,
+}
+
+-- ═══════════════════════════════════════════════════
 --  AUTO SAVE MANAGER
 -- ═══════════════════════════════════════════════════
 local AutoSave = {}
-AutoSave.Enabled     = true
-AutoSave.Data        = {}
-AutoSave.FileName    = nil
-AutoSave.SaveFile    = nil       -- custom nama file (opsional)
-AutoSave._pending    = 0
-AutoSave._saveDelay  = 0.6
+AutoSave.Enabled    = true
+AutoSave.Data       = {}
+AutoSave.FileName   = nil
+AutoSave.SaveFile   = nil
+AutoSave._pending   = 0
+AutoSave._saveDelay = 0.6
 
 local function HasFileIO()
   return type(writefile) == "function"
@@ -108,8 +191,7 @@ local function HasFileIO()
 end
 
 function AutoSave:Init()
-  if self.FileName then return end -- sudah pernah init
-
+  if self.FileName then return end
   local name
   if self.SaveFile then
     name = tostring(self.SaveFile)
@@ -130,7 +212,6 @@ function AutoSave:Init()
       end
     end
   else
-    -- fallback: simpan di memory getgenv (persist antar execute dalam 1 sesi)
     local env = (getgenv and getgenv()) or _G
     self.Data = env.__KingAkbarUI_SaveData or {}
   end
@@ -151,9 +232,7 @@ function AutoSave:QueueSave()
   self._pending += 1
   local token = self._pending
   task.delay(self._saveDelay, function()
-    if token == self._pending then
-      self:Flush()
-    end
+    if token == self._pending then self:Flush() end
   end)
 end
 
@@ -161,9 +240,7 @@ function AutoSave:Flush()
   if not self.Enabled then return end
   if HasFileIO() then
     local ok, encoded = pcall(HttpService.JSONEncode, HttpService, self.Data)
-    if ok and encoded then
-      pcall(writefile, self.FileName, encoded)
-    end
+    if ok and encoded then pcall(writefile, self.FileName, encoded) end
   else
     local env = (getgenv and getgenv()) or _G
     env.__KingAkbarUI_SaveData = self.Data
@@ -186,17 +263,7 @@ end
 --  GLOBAL CONFIG
 -- ═══════════════════════════════════════════════════
 local CONFIG = {
-  Theme = {
-    Primary    = Color3.fromRGB(255, 255, 255),
-    Background = Color3.fromRGB(10, 10, 10),
-    Secondary  = Color3.fromRGB(25, 25, 25),
-    Panel      = Color3.fromRGB(255, 255, 255),
-    Text       = Color3.fromRGB(255, 255, 255),
-    SubText    = Color3.fromRGB(160, 160, 160),
-    Stroke     = Color3.fromRGB(70, 70, 70),
-    Divider    = Color3.fromRGB(80, 80, 80),
-    LineColor  = Color3.fromRGB(110, 110, 110),
-  },
+  Theme = {},
   Font = {
     Bold    = Enum.Font.GothamBold,
     Regular = Enum.Font.SourceSans,
@@ -207,8 +274,6 @@ local CONFIG = {
     CornerRadius           = 6,
     BackgroundImage        = "rbxassetid://110409843085547",
     BackgroundTransparency = 0.6,
-    BackgroundTint         = Color3.fromRGB(0, 0, 0),
-    BackgroundTintTrans    = 0.3,
   },
   Notification = {
     Width       = 320,
@@ -216,17 +281,16 @@ local CONFIG = {
     AnimateTime = 0.5,
   },
   Assets = {
-    ShadowImage    = "rbxassetid://1316045217",
-    RippleImage    = "rbxassetid://106471194043211",
     ArrowIcon      = "rbxassetid://125609963478878",
     DropdownArrow  = "rbxassetid://90200523188815",
     DefaultIcon    = "rbxassetid://7734010488",
     FloatingButton = "rbxassetid://91115084979317",
   },
-  Behavior = {
-    AntiAFK = true,
-  },
+  Behavior = { AntiAFK = true },
 }
+
+-- load default theme
+for k, v in pairs(Themes.Dark) do CONFIG.Theme[k] = v end
 
 -- ═══════════════════════════════════════════════════
 --  HELPER UMUM
@@ -245,9 +309,7 @@ end
 local function SafeCall(Fn, ...)
   if type(Fn) ~= "function" then return end
   local ok, err = pcall(Fn, ...)
-  if not ok then
-    warn("[KingAkbarUI] Callback error: " .. tostring(err))
-  end
+  if not ok then warn("[KingAkbarUI] Callback error: " .. tostring(err)) end
 end
 
 local function Tween(Inst, Props, Time, Style, Dir)
@@ -273,9 +335,24 @@ local function ContrastColor(C)
   return lum > 0.6 and Color3.fromRGB(20, 20, 20) or Color3.fromRGB(255, 255, 255)
 end
 
--- key builder (namespace + judul + tipe)
 local function MakeKey(...)
   return table.concat({ ... }, "|")
+end
+
+-- ═══════════════════════════════════════════════════
+--  THEME HOOKS (live switch)
+-- ═══════════════════════════════════════════════════
+local ThemeHooks = {}
+
+local function OnThemeChange(fn)
+  table.insert(ThemeHooks, fn)
+  return fn
+end
+
+local function FireThemeChange()
+  for _, fn in ipairs(ThemeHooks) do
+    pcall(fn)
+  end
 end
 
 local Custom = {} do
@@ -284,9 +361,7 @@ local Custom = {} do
 
   function Custom:Create(Name, Properties, Parent)
     local _instance = Instance.new(Name)
-    for i, v in pairs(Properties) do
-      _instance[i] = v
-    end
+    for i, v in pairs(Properties) do _instance[i] = v end
     if Parent then _instance.Parent = Parent end
     return _instance
   end
@@ -301,15 +376,13 @@ local Custom = {} do
     end)
   end
 
-  function Custom:SetTheme(t)
+  function Custom:SetTheme(t, silent)
     for k, v in pairs(t) do CONFIG.Theme[k] = v end
     Custom.ColorRGB = CONFIG.Theme.Primary
+    if not silent then FireThemeChange() end
   end
 
-  function Custom:SetFont(f)
-    for k, v in pairs(f) do CONFIG.Font[k] = v end
-  end
-
+  function Custom:SetFont(f) for k, v in pairs(f) do CONFIG.Font[k] = v end end
   function Custom:GetConfig() return CONFIG end
 end
 
@@ -330,13 +403,9 @@ local function NewScreenGui(Name, Order)
   if not RunService:IsStudio() then
     if syn and syn.protect_gui then pcall(syn.protect_gui, gui) end
     local ok = pcall(function()
-      if gethui then
-        gui.Parent = gethui()
-      elseif cloneref then
-        gui.Parent = cloneref(CoreGui)
-      else
-        gui.Parent = CoreGui
-      end
+      if gethui then gui.Parent = gethui()
+      elseif cloneref then gui.Parent = cloneref(CoreGui)
+      else gui.Parent = CoreGui end
     end)
     parented = ok and gui.Parent ~= nil
   end
@@ -357,8 +426,7 @@ local function MakeDraggable(Handle, Object, Bind)
   Handle.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
       or input.UserInputType == Enum.UserInputType.Touch then
-      Dragging  = true
-      Moved     = false
+      Dragging  = true; Moved = false
       DragInput = input
       DragStart = input.Position
       StartPos  = Object.Position
@@ -394,21 +462,17 @@ end
 -- ═══════════════════════════════════════════════════
 local function CreateFloatingButton()
   local Gui = NewScreenGui("KingAkbarUI_Floating", 20)
-
   local Btn = Custom:Create("ImageButton", {
     Name = "OpenCloseButton",
     BackgroundColor3 = Color3.fromRGB(0, 0, 0),
     BackgroundTransparency = 0.4,
-    BorderSizePixel = 0,
-    AutoButtonColor = false,
+    BorderSizePixel = 0, AutoButtonColor = false,
     Position = UDim2.new(0.85, 0, 0.05, 0),
     Size = UDim2.fromOffset(45, 45),
     Image = CONFIG.Assets.FloatingButton,
     Visible = false,
   }, Gui)
-
   Custom:Create("UICorner", { Name = "MainCorner", CornerRadius = UDim.new(0, 9) }, Btn)
-
   local DidMove = MakeDraggable(Btn, Btn, BindLib)
   return Btn, DidMove
 end
@@ -422,30 +486,21 @@ local function CircleClick(Button)
   task.spawn(function()
     if not Button or not Button.Parent then return end
     Button.ClipsDescendants = true
-
     local W, H = Button.AbsoluteSize.X, Button.AbsoluteSize.Y
     local rel = UserInputService:GetMouseLocation() - Button.AbsolutePosition
     if rel.X < 0 or rel.Y < 0 or rel.X > W or rel.Y > H then
       rel = Vector2.new(W / 2, H / 2)
     end
-
     local Circle = Custom:Create("Frame", {
       AnchorPoint = Vector2.new(0.5, 0.5),
       BackgroundColor3 = Color3.fromRGB(150, 150, 150),
-      BackgroundTransparency = 0.8,
-      BorderSizePixel = 0,
+      BackgroundTransparency = 0.8, BorderSizePixel = 0,
       Position = UDim2.fromOffset(rel.X, rel.Y),
-      Size = UDim2.fromOffset(0, 0),
-      ZIndex = 10,
+      Size = UDim2.fromOffset(0, 0), ZIndex = 10,
     }, Button)
     Custom:Create("UICorner", { CornerRadius = UDim.new(1, 0) }, Circle)
-
     local Size = math.max(W, H) * 2.2
-    Tween(Circle, {
-      Size = UDim2.fromOffset(Size, Size),
-      BackgroundTransparency = 1,
-    }, 0.5)
-
+    Tween(Circle, { Size = UDim2.fromOffset(Size, Size), BackgroundTransparency = 1 }, 0.5)
     task.wait(0.55)
     if Circle then Circle:Destroy() end
   end)
@@ -476,8 +531,7 @@ local function NewItemBase(Parent, Order, Title, Content, Reserve)
     TextTruncate = Enum.TextTruncate.AtEnd,
     BackgroundTransparency = 1, BorderSizePixel = 0,
     Position = UDim2.new(0, 10, 0, 10),
-    Size = UDim2.new(1, -Reserve, 0, 13),
-    ZIndex = 6,
+    Size = UDim2.new(1, -Reserve, 0, 13), ZIndex = 6,
   }, Frame)
 
   local ContentLabel = Custom:Create("TextLabel", {
@@ -490,8 +544,7 @@ local function NewItemBase(Parent, Order, Title, Content, Reserve)
     BackgroundTransparency = 1, BorderSizePixel = 0,
     AutomaticSize = Enum.AutomaticSize.Y,
     Position = UDim2.new(0, 10, 0, 25),
-    Size = UDim2.new(1, -Reserve, 0, 0),
-    ZIndex = 6,
+    Size = UDim2.new(1, -Reserve, 0, 0), ZIndex = 6,
   }, Frame)
 
   Base.Frame   = Frame
@@ -514,16 +567,22 @@ local function NewItemBase(Parent, Order, Title, Content, Reserve)
       h = 35
     end
     Base.Height = h
-    if Base.Apply then
-      Base.Apply(h)
-    else
-      Frame.Size = UDim2.new(1, 0, 0, h)
-    end
+    if Base.Apply then Base.Apply(h)
+    else Frame.Size = UDim2.new(1, 0, 0, h) end
   end
 
   ContentLabel:GetPropertyChangedSignal("AbsoluteSize"):Connect(Base.Refit)
   ContentLabel:GetPropertyChangedSignal("Text"):Connect(Base.Refit)
   Base.Refit()
+
+  -- theme reapply
+  OnThemeChange(function()
+    if Frame.Parent then
+      Frame.BackgroundColor3 = CONFIG.Theme.Panel
+      TitleLabel.TextColor3 = CONFIG.Theme.Text
+      ContentLabel.TextColor3 = CONFIG.Theme.Text
+    end
+  end)
 
   return Base
 end
@@ -540,8 +599,9 @@ end
 -- ═══════════════════════════════════════════════════
 local Speed_Library = {}
 Speed_Library.Unloaded = false
+Speed_Library.Themes   = Themes
 
-AutoSave:Init()  -- load save file
+AutoSave:Init()
 
 -- ─────────────────────── Notification ───────────────────────
 local NotifGui, NotifHolder
@@ -553,8 +613,7 @@ local function EnsureNotifHolder()
   end
   NotifGui = NewScreenGui("KingAkbarUI_Notification", 50)
   NotifHolder = Custom:Create("Frame", {
-    Name = "Holder",
-    AnchorPoint = Vector2.new(1, 1),
+    Name = "Holder", AnchorPoint = Vector2.new(1, 1),
     BackgroundTransparency = 1, BorderSizePixel = 0,
     Position = UDim2.new(1, -20, 1, -20),
     Size = UDim2.new(0, CONFIG.Notification.Width, 1, -40),
@@ -592,7 +651,9 @@ function Speed_Library:SetNotification(Config)
     Size = UDim2.new(1, 0, 1, 0),
   }, Container)
   Custom:Create("UICorner", { CornerRadius = UDim.new(0, 8) }, Card)
-  Custom:Create("UIStroke", { Color = CONFIG.Theme.Stroke, Thickness = 1.2 }, Card)
+  local CardStroke = Custom:Create("UIStroke", {
+    Color = CONFIG.Theme.Stroke, Thickness = 1.2,
+  }, Card)
 
   local TitleWidth = TextWidth(Title, 14, CONFIG.Font.Bold)
 
@@ -644,6 +705,16 @@ function Speed_Library:SetNotification(Config)
   ContentLabel:GetPropertyChangedSignal("AbsoluteSize"):Connect(Refit)
   Refit()
 
+  OnThemeChange(function()
+    if not Card.Parent then return end
+    Card.BackgroundColor3 = CONFIG.Theme.Background
+    CardStroke.Color = CONFIG.Theme.Stroke
+    TitleLabel.TextColor3 = CONFIG.Theme.Text
+    DescLabel.TextColor3 = CONFIG.Theme.Primary
+    CloseBtn.TextColor3 = CONFIG.Theme.Text
+    ContentLabel.TextColor3 = CONFIG.Theme.SubText
+  end)
+
   local Closed = false
   local Notification = {}
 
@@ -691,10 +762,8 @@ function Speed_Library:CreateWindow(Config)
     Name = "Holder",
     AnchorPoint = Vector2.new(0.5, 0.5),
     Position = UDim2.new(0.5, 0, 0.5, 0),
-    BackgroundTransparency = 1,
-    BorderSizePixel = 0,
-    Size = SizeUi,
-    ZIndex = 0,
+    BackgroundTransparency = 1, BorderSizePixel = 0,
+    Size = SizeUi, ZIndex = 0,
   }, WindowGui)
 
   local Main = Custom:Create("Frame", {
@@ -705,100 +774,83 @@ function Speed_Library:CreateWindow(Config)
     BorderSizePixel = 0,
     Position = UDim2.new(0.5, 0, 0.5, 0),
     Size = UDim2.new(1, 0, 1, 0),
-    ClipsDescendants = true,
-    ZIndex = 1,
+    ClipsDescendants = true, ZIndex = 1,
   }, DropShadowHolder)
-
   Custom:Create("UICorner", { CornerRadius = UDim.new(0, CONFIG.Window.CornerRadius) }, Main)
-  Custom:Create("UIStroke", { Color = CONFIG.Theme.Stroke, Thickness = 1.6 }, Main)
+  local MainStroke = Custom:Create("UIStroke", { Color = CONFIG.Theme.Stroke, Thickness = 1.6 }, Main)
 
+  local BgImage, Tint
   if CONFIG.Window.BackgroundImage ~= "" then
-    local BgImage = Custom:Create("ImageLabel", {
+    BgImage = Custom:Create("ImageLabel", {
       Name = "BackgroundImage",
-      BackgroundTransparency = 1,
-      BorderSizePixel = 0,
+      BackgroundTransparency = 1, BorderSizePixel = 0,
       Size = UDim2.new(1, 0, 1, 0),
       Image = CONFIG.Window.BackgroundImage,
       ImageTransparency = CONFIG.Window.BackgroundTransparency,
-      ScaleType = Enum.ScaleType.Crop,
-      ZIndex = 0,
+      ScaleType = Enum.ScaleType.Crop, ZIndex = 0,
     }, Main)
-    Custom:Create("UICorner", {
-      CornerRadius = UDim.new(0, CONFIG.Window.CornerRadius),
-    }, BgImage)
+    Custom:Create("UICorner", { CornerRadius = UDim.new(0, CONFIG.Window.CornerRadius) }, BgImage)
 
-    local Tint = Custom:Create("Frame", {
+    Tint = Custom:Create("Frame", {
       Name = "BackgroundTint",
-      BackgroundColor3 = CONFIG.Window.BackgroundTint,
-      BackgroundTransparency = CONFIG.Window.BackgroundTintTrans,
+      BackgroundColor3 = CONFIG.Theme.BackgroundTint or Color3.fromRGB(0,0,0),
+      BackgroundTransparency = CONFIG.Theme.BackgroundTintTrans or 0.3,
       BorderSizePixel = 0,
-      Size = UDim2.new(1, 0, 1, 0),
-      ZIndex = 0,
+      Size = UDim2.new(1, 0, 1, 0), ZIndex = 0,
     }, Main)
-    Custom:Create("UICorner", {
-      CornerRadius = UDim.new(0, CONFIG.Window.CornerRadius),
-    }, Tint)
+    Custom:Create("UICorner", { CornerRadius = UDim.new(0, CONFIG.Window.CornerRadius) }, Tint)
   end
 
   local Top = Custom:Create("Frame", {
-    Name = "Top",
-    BackgroundTransparency = 1,
-    BorderSizePixel = 0,
-    Size = UDim2.new(1, 0, 0, 38),
-    ZIndex = 5,
+    Name = "Top", BackgroundTransparency = 1, BorderSizePixel = 0,
+    Size = UDim2.new(1, 0, 0, 38), ZIndex = 5,
   }, Main)
 
   local TitleWidth = TextWidth(Title, 14, CONFIG.Font.Bold)
 
-  Custom:Create("TextLabel", {
+  local TitleLabel = Custom:Create("TextLabel", {
     Font = CONFIG.Font.Bold, Text = Title, TextColor3 = CONFIG.Theme.Text,
     TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left,
     BackgroundTransparency = 1, BorderSizePixel = 0,
-    Size = UDim2.new(0, TitleWidth + 4, 1, 0), Position = UDim2.new(0, 10, 0, 0),
-    ZIndex = 5,
+    Size = UDim2.new(0, TitleWidth + 4, 1, 0),
+    Position = UDim2.new(0, 10, 0, 0), ZIndex = 5,
   }, Top)
 
-  Custom:Create("TextLabel", {
+  local DescLabel = Custom:Create("TextLabel", {
     Font = CONFIG.Font.Bold, Text = Description, TextColor3 = CONFIG.Theme.Primary,
     TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left,
     TextTruncate = Enum.TextTruncate.AtEnd,
     BackgroundTransparency = 1, BorderSizePixel = 0,
     Size = UDim2.new(1, -(TitleWidth + 15 + 80), 1, 0),
-    Position = UDim2.new(0, TitleWidth + 15, 0, 0),
-    ZIndex = 5,
+    Position = UDim2.new(0, TitleWidth + 15, 0, 0), ZIndex = 5,
   }, Top)
 
   local Close = Custom:Create("TextButton", {
     Font = CONFIG.Font.Regular, Text = "X", TextColor3 = CONFIG.Theme.Text,
     TextSize = 18, AnchorPoint = Vector2.new(1, 0.5),
     BackgroundTransparency = 1, BorderSizePixel = 0,
-    Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.fromOffset(25, 25),
-    ZIndex = 6,
+    Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.fromOffset(25, 25), ZIndex = 6,
   }, Top)
 
   local Min = Custom:Create("TextButton", {
     Font = CONFIG.Font.Regular, Text = "-", TextColor3 = CONFIG.Theme.Text,
     TextSize = 18, AnchorPoint = Vector2.new(1, 0.5),
     BackgroundTransparency = 1, BorderSizePixel = 0,
-    Position = UDim2.new(1, -42, 0.5, 0), Size = UDim2.fromOffset(25, 25),
-    ZIndex = 6,
+    Position = UDim2.new(1, -42, 0.5, 0), Size = UDim2.fromOffset(25, 25), ZIndex = 6,
   }, Top)
 
-  Custom:Create("Frame", {
+  local Divider = Custom:Create("Frame", {
     AnchorPoint = Vector2.new(0.5, 0),
     BackgroundColor3 = CONFIG.Theme.Panel,
     BackgroundTransparency = 0.85, BorderSizePixel = 0,
     Position = UDim2.new(0.5, 0, 0, 38),
-    Size = UDim2.new(1, 0, 0, 1),
-    ZIndex = 5,
+    Size = UDim2.new(1, 0, 0, 1), ZIndex = 5,
   }, Main)
 
   local LayersTab = Custom:Create("Frame", {
-    Name = "LayersTab",
-    BackgroundTransparency = 1, BorderSizePixel = 0,
+    Name = "LayersTab", BackgroundTransparency = 1, BorderSizePixel = 0,
     Position = UDim2.new(0, 9, 0, 50),
-    Size = UDim2.new(0, TabWidth, 1, -59),
-    ZIndex = 5,
+    Size = UDim2.new(0, TabWidth, 1, -59), ZIndex = 5,
   }, Main)
 
   local ScrollTab = Custom:Create("ScrollingFrame", {
@@ -808,21 +860,16 @@ function Speed_Library:CreateWindow(Config)
     ScrollingDirection = Enum.ScrollingDirection.Y,
     ScrollBarThickness = 0, Active = true,
     BackgroundTransparency = 1, BorderSizePixel = 0,
-    Size = UDim2.new(1, 0, 1, 0),
-    ZIndex = 5,
+    Size = UDim2.new(1, 0, 1, 0), ZIndex = 5,
   }, LayersTab)
-
   Custom:Create("UIListLayout", {
-    Padding = UDim.new(0, 3),
-    SortOrder = Enum.SortOrder.LayoutOrder,
+    Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder,
   }, ScrollTab)
 
   local Layers = Custom:Create("Frame", {
-    Name = "Layers",
-    BackgroundTransparency = 1, BorderSizePixel = 0,
+    Name = "Layers", BackgroundTransparency = 1, BorderSizePixel = 0,
     Position = UDim2.new(0, TabWidth + 18, 0, 50),
-    Size = UDim2.new(1, -(TabWidth + 9 + 18), 1, -59),
-    ZIndex = 5,
+    Size = UDim2.new(1, -(TabWidth + 9 + 18), 1, -59), ZIndex = 5,
   }, Main)
 
   local NameTab = Custom:Create("TextLabel", {
@@ -830,19 +877,33 @@ function Speed_Library:CreateWindow(Config)
     TextSize = 24, TextWrapped = true,
     TextXAlignment = Enum.TextXAlignment.Left,
     BackgroundTransparency = 1, BorderSizePixel = 0,
-    Size = UDim2.new(1, 0, 0, 30),
-    ZIndex = 5,
+    Size = UDim2.new(1, 0, 0, 30), ZIndex = 5,
   }, Layers)
 
   local LayersReal = Custom:Create("Frame", {
-    Name = "Pages",
-    AnchorPoint = Vector2.new(0, 1),
+    Name = "Pages", AnchorPoint = Vector2.new(0, 1),
     BackgroundTransparency = 1, BorderSizePixel = 0,
     ClipsDescendants = true,
     Position = UDim2.new(0, 0, 1, 0),
-    Size = UDim2.new(1, 0, 1, -33),
-    ZIndex = 5,
+    Size = UDim2.new(1, 0, 1, -33), ZIndex = 5,
   }, Layers)
+
+  -- theme reapply untuk window
+  OnThemeChange(function()
+    if not Main.Parent then return end
+    Main.BackgroundColor3 = CONFIG.Theme.Background
+    MainStroke.Color = CONFIG.Theme.Stroke
+    TitleLabel.TextColor3 = CONFIG.Theme.Text
+    DescLabel.TextColor3 = CONFIG.Theme.Primary
+    Close.TextColor3 = CONFIG.Theme.Text
+    Min.TextColor3 = CONFIG.Theme.Text
+    Divider.BackgroundColor3 = CONFIG.Theme.Panel
+    NameTab.TextColor3 = CONFIG.Theme.Text
+    if Tint then
+      Tint.BackgroundColor3 = CONFIG.Theme.BackgroundTint or Color3.fromRGB(0,0,0)
+      Tint.BackgroundTransparency = CONFIG.Theme.BackgroundTintTrans or 0.3
+    end
+  end)
 
   local Destroyed = false
 
@@ -859,7 +920,7 @@ function Speed_Library:CreateWindow(Config)
   local function DestroyWindow()
     if Destroyed then return end
     Destroyed = true
-    AutoSave:Flush()  -- save sebelum destroy
+    AutoSave:Flush()
     for _, c in ipairs(WindowConns) do
       pcall(function() c:Disconnect() end)
     end
@@ -897,39 +958,40 @@ function Speed_Library:CreateWindow(Config)
     ClipsDescendants = true,
     Position = UDim2.new(1, 8, 1, 8),
     Size = UDim2.new(1, 154, 1, 54),
-    Visible = false,
-    ZIndex = 6,
+    Visible = false, ZIndex = 6,
   }, Layers)
   Custom:Create("UICorner", {}, MoreBlur)
 
   local ConnectButton = Custom:Create("TextButton", {
     Font = CONFIG.Font.Regular, Text = "",
     BackgroundTransparency = 1, BorderSizePixel = 0,
-    Size = UDim2.new(1, 0, 1, 0),
-    ZIndex = 7,
+    Size = UDim2.new(1, 0, 1, 0), ZIndex = 7,
   }, MoreBlur)
 
   local DropdownSelect = Custom:Create("Frame", {
     AnchorPoint = Vector2.new(1, 0.5),
     BackgroundColor3 = CONFIG.Theme.Secondary,
-    BorderSizePixel = 0,
-    Active = true,
+    BorderSizePixel = 0, Active = true,
     Position = UDim2.new(1, 172, 0.5, 0),
     Size = UDim2.new(0, 160, 1, -16),
-    ClipsDescendants = true,
-    ZIndex = 7,
+    ClipsDescendants = true, ZIndex = 7,
   }, MoreBlur)
   Custom:Create("UICorner", { CornerRadius = UDim.new(0, 3) }, DropdownSelect)
-  Custom:Create("UIStroke", {
+  local DropdownSelectStroke = Custom:Create("UIStroke", {
     Color = CONFIG.Theme.Stroke, Thickness = 2, Transparency = 0.3,
   }, DropdownSelect)
+
+  OnThemeChange(function()
+    if not DropdownSelect.Parent then return end
+    DropdownSelect.BackgroundColor3 = CONFIG.Theme.Secondary
+    DropdownSelectStroke.Color = CONFIG.Theme.Stroke
+  end)
 
   local DropdownSelectReal = Custom:Create("Frame", {
     AnchorPoint = Vector2.new(0.5, 0.5),
     BackgroundTransparency = 1, BorderSizePixel = 0,
     Position = UDim2.new(0.5, 0, 0.5, 0),
-    Size = UDim2.new(1, -10, 1, -10),
-    ZIndex = 8,
+    Size = UDim2.new(1, -10, 1, -10), ZIndex = 8,
   }, DropdownSelect)
 
   local function OpenDropdownPanel(Page)
@@ -972,11 +1034,13 @@ function Speed_Library:CreateWindow(Config)
       T.Page.Visible = sel
 
       Tween(T.Frame, {
-        BackgroundTransparency = sel and 0.72 or 0.9,
+        BackgroundColor3 = sel and CONFIG.Theme.Secondary or CONFIG.Theme.Secondary,
+        BackgroundTransparency = sel and 0.55 or 0.85,
         Size = sel and UDim2.new(1, 0, 0, 34) or UDim2.new(1, 0, 0, 32),
       }, t)
 
       Tween(T.Bar, {
+        BackgroundColor3 = CONFIG.Theme.Primary,
         Size = sel and UDim2.new(0, 3, 0, 20) or UDim2.new(0, 0, 0, 20),
       }, t)
 
@@ -1012,55 +1076,44 @@ function Speed_Library:CreateWindow(Config)
       CanvasSize = UDim2.new(0, 0, 0, 0),
       AutomaticCanvasSize = Enum.AutomaticSize.Y,
       ScrollingDirection = Enum.ScrollingDirection.Y,
-      ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80),
+      ScrollBarImageColor3 = CONFIG.Theme.SubText,
       ScrollBarThickness = 0, Active = true,
       BackgroundTransparency = 1, BorderSizePixel = 0,
-      Size = UDim2.new(1, 0, 1, 0),
-      Visible = false,
-      ZIndex = 5,
+      Size = UDim2.new(1, 0, 1, 0), Visible = false, ZIndex = 5,
     }, LayersReal)
-
     Custom:Create("UIListLayout", {
-      Padding = UDim.new(0, 3),
-      SortOrder = Enum.SortOrder.LayoutOrder,
+      Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder,
     }, ScrolLayers)
 
     local Tab = Custom:Create("Frame", {
       Name = "Tab",
-      BackgroundColor3 = Color3.fromRGB(30, 30, 30),
-      BackgroundTransparency = 0.9,
-      BorderSizePixel = 0,
-      LayoutOrder = TabIndex,
+      BackgroundColor3 = CONFIG.Theme.Secondary,
+      BackgroundTransparency = 0.85,
+      BorderSizePixel = 0, LayoutOrder = TabIndex,
       Size = UDim2.new(1, 0, 0, 32),
-      ClipsDescendants = false,
-      ZIndex = 5,
+      ClipsDescendants = false, ZIndex = 5,
     }, ScrollTab)
     Custom:Create("UICorner", { CornerRadius = UDim.new(0, 6) }, Tab)
 
     local TabStroke = Custom:Create("UIStroke", {
-      Color = CONFIG.Theme.Stroke,
-      Thickness = 1,
-      Transparency = 0.85,
+      Color = CONFIG.Theme.Stroke, Thickness = 1, Transparency = 0.85,
       ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
     }, Tab)
 
     local TabButton = Custom:Create("TextButton", {
       Font = CONFIG.Font.Regular, Text = "",
       BackgroundTransparency = 1, BorderSizePixel = 0,
-      Size = UDim2.new(1, 0, 1, 0),
-      ZIndex = 7,
+      Size = UDim2.new(1, 0, 1, 0), ZIndex = 7,
     }, Tab)
 
     local TabIcon = nil
     if Icon ~= "" then
       TabIcon = Custom:Create("ImageLabel", {
-        Name = "TabIcon",
-        Image = Icon,
+        Name = "TabIcon", Image = Icon,
         ImageColor3 = CONFIG.Theme.Text,
         BackgroundTransparency = 1, BorderSizePixel = 0,
         Position = UDim2.new(0, 10, 0, 8),
-        Size = UDim2.fromOffset(16, 16),
-        ZIndex = 6,
+        Size = UDim2.fromOffset(16, 16), ZIndex = 6,
       }, Tab)
     end
 
@@ -1071,44 +1124,44 @@ function Speed_Library:CreateWindow(Config)
       TextTruncate = Enum.TextTruncate.AtEnd,
       BackgroundTransparency = 1, BorderSizePixel = 0,
       Size = UDim2.new(1, Icon ~= "" and -34 or -14, 1, 0),
-      Position = UDim2.new(0, Icon ~= "" and 34 or 12, 0, 0),
-      ZIndex = 6,
+      Position = UDim2.new(0, Icon ~= "" and 34 or 12, 0, 0), ZIndex = 6,
     }, Tab)
 
     local Bar = Custom:Create("Frame", {
       Name = "ChooseFrame",
       AnchorPoint = Vector2.new(0, 0.5),
-      BackgroundColor3 = CONFIG.Theme.Primary,
-      BorderSizePixel = 0,
+      BackgroundColor3 = CONFIG.Theme.Primary, BorderSizePixel = 0,
       Position = UDim2.new(0, 3, 0.5, 0),
-      Size = UDim2.new(0, 0, 0, 20),
-      ZIndex = 6,
+      Size = UDim2.new(0, 0, 0, 20), ZIndex = 6,
     }, Tab)
     Custom:Create("UICorner", { CornerRadius = UDim.new(1, 0) }, Bar)
 
-    local BarStroke = Custom:Create("UIStroke", {
-      Color = CONFIG.Theme.Primary, Thickness = 1.6, Transparency = 1,
-    }, Bar)
-
     local TabObj = {
-      Name   = _Name,
-      Frame  = Tab,
-      Page   = ScrolLayers,
-      Bar    = Bar,
-      Stroke = TabStroke,
-      Icon   = TabIcon,
-      Label  = TabLabel,
+      Name   = _Name, Frame = Tab, Page = ScrolLayers,
+      Bar    = Bar, Stroke = TabStroke, Icon = TabIcon, Label = TabLabel,
     }
     table.insert(AllTabs, TabObj)
 
-    if TabIndex == 1 then
-      SelectTab(TabObj, true)
-    end
+    if TabIndex == 1 then SelectTab(TabObj, true) end
 
     TabButton.Activated:Connect(function()
       CircleClick(TabButton)
       CloseDropdownPanel()
       SelectTab(TabObj, false)
+    end)
+
+    -- reapply warna tab saat tema berubah
+    OnThemeChange(function()
+      if not Tab.Parent then return end
+      local sel = (CurrentTab == TabObj)
+      Tab.BackgroundColor3 = CONFIG.Theme.Secondary
+      Tab.BackgroundTransparency = sel and 0.55 or 0.85
+      TabStroke.Color = sel and CONFIG.Theme.Primary or CONFIG.Theme.Stroke
+      Bar.BackgroundColor3 = CONFIG.Theme.Primary
+      TabLabel.TextColor3 = sel and CONFIG.Theme.Primary or CONFIG.Theme.Text
+      if TabIcon then
+        TabIcon.ImageColor3 = sel and CONFIG.Theme.Primary or CONFIG.Theme.Text
+      end
     end)
 
     -- ═══════════ Sections ═══════════
@@ -1122,17 +1175,13 @@ function Speed_Library:CreateWindow(Config)
       end
       SectionTitle = tostring(SectionTitle or "")
       local SectionNamespace = MakeKey(TabNamespace, SectionTitle)
-
       local OpenSection = OpenDefault == true
       CountSection += 1
 
       local Section = Custom:Create("Frame", {
-        Name = "Section",
-        BackgroundTransparency = 1, BorderSizePixel = 0,
-        ClipsDescendants = true,
-        LayoutOrder = CountSection,
-        Size = UDim2.new(1, 0, 0, 30),
-        ZIndex = 5,
+        Name = "Section", BackgroundTransparency = 1, BorderSizePixel = 0,
+        ClipsDescendants = true, LayoutOrder = CountSection,
+        Size = UDim2.new(1, 0, 0, 30), ZIndex = 5,
       }, ScrolLayers)
 
       local SectionReal = Custom:Create("Frame", {
@@ -1140,24 +1189,21 @@ function Speed_Library:CreateWindow(Config)
         BackgroundColor3 = CONFIG.Theme.Panel,
         BackgroundTransparency = 0.935, BorderSizePixel = 0,
         Position = UDim2.new(0.5, 0, 0, 0),
-        Size = UDim2.new(1, 0, 0, 30),
-        ZIndex = 5,
+        Size = UDim2.new(1, 0, 0, 30), ZIndex = 5,
       }, Section)
       Custom:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, SectionReal)
 
       local SectionButton = Custom:Create("TextButton", {
         Font = CONFIG.Font.Regular, Text = "",
         BackgroundTransparency = 1, BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 1, 0),
-        ZIndex = 7,
+        Size = UDim2.new(1, 0, 1, 0), ZIndex = 7,
       }, SectionReal)
 
       local FeatureFrame = Custom:Create("Frame", {
         AnchorPoint = Vector2.new(1, 0.5),
         BackgroundTransparency = 1, BorderSizePixel = 0,
         Position = UDim2.new(1, -5, 0.5, 0),
-        Size = UDim2.fromOffset(20, 20),
-        ZIndex = 6,
+        Size = UDim2.fromOffset(20, 20), ZIndex = 6,
       }, SectionReal)
 
       Custom:Create("ImageLabel", {
@@ -1165,11 +1211,10 @@ function Speed_Library:CreateWindow(Config)
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundTransparency = 1, BorderSizePixel = 0,
         Position = UDim2.new(0.5, 0, 0.5, 0),
-        Rotation = -90, Size = UDim2.new(1, 6, 1, 6),
-        ZIndex = 6,
+        Rotation = -90, Size = UDim2.new(1, 6, 1, 6), ZIndex = 6,
       }, FeatureFrame)
 
-      Custom:Create("TextLabel", {
+      local SectionTitleLabel = Custom:Create("TextLabel", {
         Font = CONFIG.Font.Bold, Text = SectionTitle,
         TextColor3 = CONFIG.Theme.Text, TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
@@ -1177,19 +1222,17 @@ function Speed_Library:CreateWindow(Config)
         AnchorPoint = Vector2.new(0, 0.5),
         BackgroundTransparency = 1, BorderSizePixel = 0,
         Position = UDim2.new(0, 10, 0.5, 0),
-        Size = UDim2.new(1, -50, 0, 13),
-        ZIndex = 6,
+        Size = UDim2.new(1, -50, 0, 13), ZIndex = 6,
       }, SectionReal)
 
       local SectionDecideFrame = Custom:Create("Frame", {
         BackgroundColor3 = CONFIG.Theme.Panel, BorderSizePixel = 0,
         AnchorPoint = Vector2.new(0.5, 0),
         Position = UDim2.new(0.5, 0, 0, 33),
-        Size = UDim2.new(0, 0, 0, 2),
-        ZIndex = 5,
+        Size = UDim2.new(0, 0, 0, 2), ZIndex = 5,
       }, Section)
       Custom:Create("UICorner", {}, SectionDecideFrame)
-      Custom:Create("UIGradient", {
+      local SectionGradient = Custom:Create("UIGradient", {
         Color = ColorSequence.new {
           ColorSequenceKeypoint.new(0, CONFIG.Theme.Background),
           ColorSequenceKeypoint.new(0.5, CONFIG.Theme.Primary),
@@ -1203,13 +1246,11 @@ function Speed_Library:CreateWindow(Config)
         BackgroundTransparency = 1, BorderSizePixel = 0,
         ClipsDescendants = true,
         Position = UDim2.new(0.5, 0, 0, 38),
-        Size = UDim2.new(1, 0, 0, 0),
-        ZIndex = 5,
+        Size = UDim2.new(1, 0, 0, 0), ZIndex = 5,
       }, Section)
 
       local SectionList = Custom:Create("UIListLayout", {
-        Padding = UDim.new(0, 3),
-        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder,
       }, SectionAdd)
 
       local function ApplyLayout(Animate)
@@ -1235,15 +1276,23 @@ function Speed_Library:CreateWindow(Config)
 
       ApplyLayout(false)
 
+      OnThemeChange(function()
+        if not Section.Parent then return end
+        SectionReal.BackgroundColor3 = CONFIG.Theme.Panel
+        SectionTitleLabel.TextColor3 = CONFIG.Theme.Text
+        SectionDecideFrame.BackgroundColor3 = CONFIG.Theme.Panel
+        SectionGradient.Color = ColorSequence.new {
+          ColorSequenceKeypoint.new(0, CONFIG.Theme.Background),
+          ColorSequenceKeypoint.new(0.5, CONFIG.Theme.Primary),
+          ColorSequenceKeypoint.new(1, CONFIG.Theme.Background),
+        }
+      end)
+
       -- ═══════════ Items ═══════════
       local Item = {}
       local ItemCount = 0
-      local function NextOrder()
-        ItemCount += 1
-        return ItemCount
-      end
+      local function NextOrder() ItemCount += 1; return ItemCount end
 
-      -- helper: bikin key unik untuk save
       local function ItemKey(ItemTitle, ItemType, CustomFlag)
         if CustomFlag and type(CustomFlag) == "string" and CustomFlag ~= "" then
           return MakeKey(WindowNamespace, "FLAG", CustomFlag)
@@ -1257,12 +1306,10 @@ function Speed_Library:CreateWindow(Config)
         local Base = NewItemBase(SectionAdd, NextOrder(), PTitle, PContent, 16)
         local Funcs = {}
         AttachCommon(Funcs, Base)
-
         function Funcs:Set(SConfig)
           Base.Title.Text = tostring(Get(SConfig, 1, "Title", Base.Title.Text))
           Base.Content.Text = tostring(Get(SConfig, 2, "Content", Base.Content.Text))
         end
-
         return Funcs
       end
 
@@ -1275,8 +1322,7 @@ function Speed_Library:CreateWindow(Config)
           BackgroundColor3 = CONFIG.Theme.Divider,
           BackgroundTransparency = 0.1, BorderSizePixel = 0,
           LayoutOrder = NextOrder(),
-          Size = UDim2.new(1, 0, 0, 30),
-          ZIndex = 5,
+          Size = UDim2.new(1, 0, 0, 30), ZIndex = 5,
         }, SectionAdd)
         Custom:Create("UICorner", { CornerRadius = UDim.new(0, 6) }, Seperator)
 
@@ -1290,8 +1336,7 @@ function Speed_Library:CreateWindow(Config)
           BackgroundTransparency = 1, BorderSizePixel = 0,
           Position = UDim2.new(0, 12, 0, 0),
           Size = UDim2.new(1, -16, 1, 0),
-          Name = "SeperatorTitle",
-          ZIndex = 6,
+          Name = "SeperatorTitle", ZIndex = 6,
         }, Seperator)
 
         function Funcs:Set(NConfig)
@@ -1299,6 +1344,13 @@ function Speed_Library:CreateWindow(Config)
         end
         function Funcs:SetVisible(State) Seperator.Visible = State and true or false end
         function Funcs:Destroy() Seperator:Destroy() end
+
+        OnThemeChange(function()
+          if Seperator.Parent then
+            Seperator.BackgroundColor3 = CONFIG.Theme.Divider
+            SepLabel.TextColor3 = CONFIG.Theme.Text
+          end
+        end)
 
         return Funcs
       end
@@ -1310,11 +1362,13 @@ function Speed_Library:CreateWindow(Config)
           BackgroundColor3 = CONFIG.Theme.LineColor,
           BackgroundTransparency = 0.2, BorderSizePixel = 0,
           LayoutOrder = NextOrder(),
-          Size = UDim2.new(1, 0, 0, 7),
-          ZIndex = 5,
+          Size = UDim2.new(1, 0, 0, 7), ZIndex = 5,
         }, SectionAdd)
         Custom:Create("UICorner", { CornerRadius = UDim.new(0, 3) }, Line)
         function Funcs:Destroy() Line:Destroy() end
+        OnThemeChange(function()
+          if Line.Parent then Line.BackgroundColor3 = CONFIG.Theme.LineColor end
+        end)
         return Funcs
       end
 
@@ -1331,8 +1385,7 @@ function Speed_Library:CreateWindow(Config)
         local ButtonButton = Custom:Create("TextButton", {
           Font = CONFIG.Font.Regular, Text = "",
           BackgroundTransparency = 1, BorderSizePixel = 0,
-          Size = UDim2.new(1, 0, 1, 0),
-          ZIndex = 7,
+          Size = UDim2.new(1, 0, 1, 0), ZIndex = 7,
         }, Base.Frame)
 
         if type(Icon) == "string" and Icon ~= "" then
@@ -1341,8 +1394,7 @@ function Speed_Library:CreateWindow(Config)
             AnchorPoint = Vector2.new(1, 0.5),
             BackgroundTransparency = 1, BorderSizePixel = 0,
             Position = UDim2.new(1, -15, 0.5, 0),
-            Size = UDim2.fromOffset(25, 25),
-            ZIndex = 6,
+            Size = UDim2.fromOffset(25, 25), ZIndex = 6,
           }, Base.Frame)
         end
 
@@ -1359,7 +1411,7 @@ function Speed_Library:CreateWindow(Config)
         return Funcs
       end
 
-      -- ═══════ Toggle (dengan AutoSave) ═══════
+      -- ═══ Toggle ═══
       function Item:AddToggle(TConfig)
         local TTitle   = Get(TConfig, 1, "Title", "")
         local TContent = Get(TConfig, 2, "Content", "")
@@ -1381,8 +1433,7 @@ function Speed_Library:CreateWindow(Config)
         local ToggleButton = Custom:Create("TextButton", {
           Font = CONFIG.Font.Regular, Text = "",
           BackgroundTransparency = 1, BorderSizePixel = 0,
-          Size = UDim2.new(1, 0, 1, 0),
-          ZIndex = 7,
+          Size = UDim2.new(1, 0, 1, 0), ZIndex = 7,
         }, Toggle)
 
         local FeatureFrame2 = Custom:Create("Frame", {
@@ -1390,8 +1441,7 @@ function Speed_Library:CreateWindow(Config)
           BackgroundColor3 = CONFIG.Theme.Panel,
           BackgroundTransparency = 0.92, BorderSizePixel = 0,
           Position = UDim2.new(1, -15, 0.5, 0),
-          Size = UDim2.fromOffset(30, 15),
-          ZIndex = 6,
+          Size = UDim2.fromOffset(30, 15), ZIndex = 6,
         }, Toggle)
         Custom:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, FeatureFrame2)
 
@@ -1403,8 +1453,7 @@ function Speed_Library:CreateWindow(Config)
           BackgroundColor3 = ContrastColor(CONFIG.Theme.Primary),
           BorderSizePixel = 0,
           Size = UDim2.fromOffset(14, 14),
-          Position = UDim2.new(0, 0, 0, 0),
-          ZIndex = 7,
+          Position = UDim2.new(0, 0, 0, 0), ZIndex = 7,
         }, FeatureFrame2)
         Custom:Create("UICorner", { CornerRadius = UDim.new(0, 15) }, ToggleCircle)
 
@@ -1413,6 +1462,7 @@ function Speed_Library:CreateWindow(Config)
             TextColor3 = isOn and CONFIG.Theme.Primary or CONFIG.Theme.Text,
           }, 0.2)
           Tween(ToggleCircle, {
+            BackgroundColor3 = ContrastColor(CONFIG.Theme.Primary),
             Position = isOn and UDim2.new(0, 15, 0, 0) or UDim2.new(0, 0, 0, 0),
           }, 0.2)
           Tween(UIStroke8, {
@@ -1428,12 +1478,8 @@ function Speed_Library:CreateWindow(Config)
         function Funcs:Set(Value, Silent)
           Funcs.Value = Value == true
           ToggleAnimation(Funcs.Value)
-          if not IsInitial then
-            AutoSave:Set(key, Funcs.Value)
-          end
-          if not Silent then
-            SafeCall(Callback, Funcs.Value)
-          end
+          if not IsInitial then AutoSave:Set(key, Funcs.Value) end
+          if not Silent then SafeCall(Callback, Funcs.Value) end
         end
 
         ToggleButton.Activated:Connect(function()
@@ -1443,10 +1489,16 @@ function Speed_Library:CreateWindow(Config)
 
         Funcs:Set(Funcs.Value)
         IsInitial = false
+
+        OnThemeChange(function()
+          if not Toggle.Parent then return end
+          ToggleAnimation(Funcs.Value)
+        end)
+
         return Funcs
       end
 
-      -- ═══════ Slider (dengan AutoSave) ═══════
+      -- ═══ Slider ═══
       function Item:AddSlider(SConfig)
         local STitle    = Get(SConfig, 1, "Title", "")
         local SContent  = Get(SConfig, 2, "Content", "")
@@ -1488,8 +1540,7 @@ function Speed_Library:CreateWindow(Config)
           AnchorPoint = Vector2.new(0, 0.5),
           BackgroundColor3 = CONFIG.Theme.Primary, BorderSizePixel = 0,
           Position = UDim2.new(1, -165, 0.5, 0),
-          Size = UDim2.fromOffset(38, 20),
-          ZIndex = 6,
+          Size = UDim2.fromOffset(38, 20), ZIndex = 6,
         }, Slider)
         Custom:Create("UICorner", { CornerRadius = UDim.new(0, 2) }, SliderInput)
 
@@ -1498,8 +1549,7 @@ function Speed_Library:CreateWindow(Config)
           TextColor3 = ContrastColor(CONFIG.Theme.Primary),
           TextSize = 12, ClearTextOnFocus = false,
           BackgroundTransparency = 1, BorderSizePixel = 0,
-          Size = UDim2.new(1, 0, 1, 0),
-          ZIndex = 7,
+          Size = UDim2.new(1, 0, 1, 0), ZIndex = 7,
         }, SliderInput)
 
         local SliderFrame = Custom:Create("Frame", {
@@ -1507,8 +1557,7 @@ function Speed_Library:CreateWindow(Config)
           BackgroundColor3 = CONFIG.Theme.Panel,
           BackgroundTransparency = 0.8, BorderSizePixel = 0,
           Position = UDim2.new(1, -20, 0.5, 0),
-          Size = UDim2.fromOffset(100, 3),
-          ZIndex = 6,
+          Size = UDim2.fromOffset(100, 3), ZIndex = 6,
         }, Slider)
         Custom:Create("UICorner", {}, SliderFrame)
 
@@ -1516,8 +1565,7 @@ function Speed_Library:CreateWindow(Config)
           AnchorPoint = Vector2.new(0, 0.5),
           BackgroundColor3 = CONFIG.Theme.Primary, BorderSizePixel = 0,
           Position = UDim2.new(0, 0, 0.5, 0),
-          Size = UDim2.new(0, 0, 1, 0),
-          ZIndex = 7,
+          Size = UDim2.new(0, 0, 1, 0), ZIndex = 7,
         }, SliderFrame)
         Custom:Create("UICorner", {}, SliderFill)
 
@@ -1525,8 +1573,7 @@ function Speed_Library:CreateWindow(Config)
           AnchorPoint = Vector2.new(0.5, 0.5),
           BackgroundColor3 = CONFIG.Theme.Primary, BorderSizePixel = 0,
           Position = UDim2.new(1, 0, 0.5, 0),
-          Size = UDim2.fromOffset(10, 10),
-          ZIndex = 8,
+          Size = UDim2.fromOffset(10, 10), ZIndex = 8,
         }, SliderFill)
         Custom:Create("UICorner", {}, SliderCircle)
         Custom:Create("UIStroke", { Color = CONFIG.Theme.Primary }, SliderCircle)
@@ -1536,8 +1583,7 @@ function Speed_Library:CreateWindow(Config)
           AnchorPoint = Vector2.new(1, 0.5),
           BackgroundTransparency = 1, BorderSizePixel = 0,
           Position = UDim2.new(1, -12, 0.5, 0),
-          Size = UDim2.fromOffset(116, 26),
-          ZIndex = 9,
+          Size = UDim2.fromOffset(116, 26), ZIndex = 9,
         }, Slider)
 
         local Dragging = false
@@ -1547,9 +1593,7 @@ function Speed_Library:CreateWindow(Config)
           Funcs.Value = Value
           TextBox.Text = tostring(Value)
           SliderFill.Size = UDim2.fromScale((Value - Min) / (Max - Min), 1)
-          if not IsInitial then
-            AutoSave:Set(key, Value)
-          end
+          if not IsInitial then AutoSave:Set(key, Value) end
           if Fire then SafeCall(Callback, Value) end
         end
 
@@ -1593,20 +1637,30 @@ function Speed_Library:CreateWindow(Config)
 
         TextBox.FocusLost:Connect(function()
           local n = tonumber(TextBox.Text)
-          if n then
-            Funcs:Set(n, true)
-          else
-            TextBox.Text = tostring(Funcs.Value)
-          end
+          if n then Funcs:Set(n, true)
+          else TextBox.Text = tostring(Funcs.Value) end
         end)
 
         Funcs:Set(Initial, false)
         IsInitial = false
         SafeCall(Callback, Initial)
+
+        OnThemeChange(function()
+          if not Slider.Parent then return end
+          SliderInput.BackgroundColor3 = CONFIG.Theme.Primary
+          TextBox.TextColor3 = ContrastColor(CONFIG.Theme.Primary)
+          SliderFrame.BackgroundColor3 = CONFIG.Theme.Panel
+          SliderFill.BackgroundColor3 = CONFIG.Theme.Primary
+          SliderCircle.BackgroundColor3 = CONFIG.Theme.Primary
+          if SliderCircle:FindFirstChildOfClass("UIStroke") then
+            SliderCircle:FindFirstChildOfClass("UIStroke").Color = CONFIG.Theme.Primary
+          end
+        end)
+
         return Funcs
       end
 
-      -- ═══════ Input (dengan AutoSave) ═══════
+      -- ═══ Input ═══
       function Item:AddInput(IConfig)
         local ITitle   = Get(IConfig, 1, "Title", "")
         local IContent = Get(IConfig, 2, "Content", "")
@@ -1630,8 +1684,7 @@ function Speed_Library:CreateWindow(Config)
           BackgroundTransparency = 0.9, BorderSizePixel = 0,
           ClipsDescendants = true,
           Position = UDim2.new(1, -7, 0.5, 0),
-          Size = UDim2.fromOffset(148, 30),
-          ZIndex = 6,
+          Size = UDim2.fromOffset(148, 30), ZIndex = 6,
         }, Base.Frame)
         Custom:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, InputFrame)
 
@@ -1645,17 +1698,14 @@ function Speed_Library:CreateWindow(Config)
           AnchorPoint = Vector2.new(0, 0.5),
           BackgroundTransparency = 1, BorderSizePixel = 0,
           Position = UDim2.new(0, 5, 0.5, 0),
-          Size = UDim2.new(1, -10, 1, -8),
-          ZIndex = 7,
+          Size = UDim2.new(1, -10, 1, -8), ZIndex = 7,
         }, InputFrame)
 
         function Funcs:Set(Value)
           Value = tostring(Value or "")
           InputTextBox.Text = Value
           Funcs.Value = Value
-          if not IsInitial then
-            AutoSave:Set(key, Value)
-          end
+          if not IsInitial then AutoSave:Set(key, Value) end
           SafeCall(Callback, Value)
         end
 
@@ -1665,10 +1715,18 @@ function Speed_Library:CreateWindow(Config)
 
         Funcs:Set(Initial)
         IsInitial = false
+
+        OnThemeChange(function()
+          if Base.Frame.Parent then
+            InputFrame.BackgroundColor3 = CONFIG.Theme.Panel
+            InputTextBox.TextColor3 = CONFIG.Theme.Text
+          end
+        end)
+
         return Funcs
       end
 
-      -- ═══════ Dropdown (dengan AutoSave) ═══════
+      -- ═══ Dropdown ═══
       function Item:AddDropdown(DConfig)
         local DTitle   = Get(DConfig, 1, "Title", "")
         local DContent = Get(DConfig, 2, "Content", "")
@@ -1707,8 +1765,7 @@ function Speed_Library:CreateWindow(Config)
           BackgroundColor3 = CONFIG.Theme.Panel,
           BackgroundTransparency = 0.9, BorderSizePixel = 0,
           Position = UDim2.new(1, -7, 0.5, 0),
-          Size = UDim2.fromOffset(148, 30),
-          ZIndex = 6,
+          Size = UDim2.fromOffset(148, 30), ZIndex = 6,
         }, Dropdown)
         Custom:Create("UICorner", { CornerRadius = UDim.new(0, 4) }, SelectOptionsFrame)
 
@@ -1721,18 +1778,16 @@ function Speed_Library:CreateWindow(Config)
           AnchorPoint = Vector2.new(0, 0.5),
           BackgroundTransparency = 1, BorderSizePixel = 0,
           Position = UDim2.new(0, 6, 0.5, 0),
-          Size = UDim2.new(1, -32, 1, -8),
-          ZIndex = 7,
+          Size = UDim2.new(1, -32, 1, -8), ZIndex = 7,
         }, SelectOptionsFrame)
 
-        Custom:Create("ImageLabel", {
+        local DropdownArrowImg = Custom:Create("ImageLabel", {
           Image = CONFIG.Assets.DropdownArrow,
           ImageColor3 = CONFIG.Theme.Text,
           AnchorPoint = Vector2.new(1, 0.5),
           BackgroundTransparency = 1, BorderSizePixel = 0,
           Position = UDim2.new(1, 0, 0.5, 0),
-          Size = UDim2.fromOffset(25, 25),
-          ZIndex = 7,
+          Size = UDim2.fromOffset(25, 25), ZIndex = 7,
         }, SelectOptionsFrame)
 
         local ScrollSelect = Custom:Create("ScrollingFrame", {
@@ -1743,13 +1798,10 @@ function Speed_Library:CreateWindow(Config)
           ScrollBarThickness = 0, Active = true,
           BackgroundTransparency = 1, BorderSizePixel = 0,
           Size = UDim2.new(1, 0, 1, 0),
-          Visible = false,
-          ZIndex = 8,
+          Visible = false, ZIndex = 8,
         }, DropdownSelectReal)
-
         Custom:Create("UIListLayout", {
-          Padding = UDim.new(0, 3),
-          SortOrder = Enum.SortOrder.LayoutOrder,
+          Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder,
         }, ScrollSelect)
 
         local SearchBar = Custom:Create("TextBox", {
@@ -1762,8 +1814,7 @@ function Speed_Library:CreateWindow(Config)
           BackgroundTransparency = 0.3,
           BorderColor3 = CONFIG.Theme.Stroke, BorderSizePixel = 1,
           LayoutOrder = -1,
-          Size = UDim2.new(1, 0, 0, 22),
-          ZIndex = 8,
+          Size = UDim2.new(1, 0, 0, 22), ZIndex = 8,
         }, ScrollSelect)
 
         SearchBar:GetPropertyChangedSignal("Text"):Connect(function()
@@ -1783,8 +1834,7 @@ function Speed_Library:CreateWindow(Config)
         local DropdownButton = Custom:Create("TextButton", {
           Font = CONFIG.Font.Regular, Text = "",
           BackgroundTransparency = 1, BorderSizePixel = 0,
-          Size = UDim2.new(1, 0, 1, 0),
-          ZIndex = 9,
+          Size = UDim2.new(1, 0, 1, 0), ZIndex = 9,
         }, Dropdown)
 
         DropdownButton.Activated:Connect(function()
@@ -1805,9 +1855,7 @@ function Speed_Library:CreateWindow(Config)
 
         function Funcs:SetPlaceholder(Text)
           PlaceholderText = tostring(Text or "Select Options")
-          if #Funcs.Value == 0 then
-            OptionSelecting.Text = PlaceholderText
-          end
+          if #Funcs.Value == 0 then OptionSelecting.Text = PlaceholderText end
         end
 
         function Funcs:GetOptions() return table.clone(Funcs.Options) end
@@ -1832,7 +1880,7 @@ function Speed_Library:CreateWindow(Config)
               if OptText and ChooseFrame then
                 local isSel = table.find(newVal, OptText.Text) ~= nil
                 Tween(ChooseFrame, { Size = isSel and UDim2.fromOffset(2, 12) or UDim2.fromOffset(0, 0) }, 0.2)
-                Tween(ChooseFrame.UIStroke, { Transparency = isSel and 0 or 1 }, 0.2)
+                Tween(ChooseFrame:FindFirstChildOfClass("UIStroke"), { Transparency = isSel and 0 or 1 }, 0.2)
                 Tween(Opt, { BackgroundTransparency = isSel and 0.88 or 0.999 }, 0.2)
               end
             end
@@ -1841,9 +1889,7 @@ function Speed_Library:CreateWindow(Config)
           local Text = table.concat(newVal, ", ")
           OptionSelecting.Text = Text ~= "" and Text or PlaceholderText
 
-          if not IsInitial then
-            AutoSave:Set(key, Funcs.Value)
-          end
+          if not IsInitial then AutoSave:Set(key, Funcs.Value) end
           if not NoCallback then SafeCall(Callback, Funcs.Value) end
         end
 
@@ -1857,16 +1903,14 @@ function Speed_Library:CreateWindow(Config)
             BackgroundColor3 = CONFIG.Theme.Panel,
             BackgroundTransparency = 0.999, BorderSizePixel = 0,
             LayoutOrder = DropCount,
-            Size = UDim2.new(1, 0, 0, 30),
-            ZIndex = 8,
+            Size = UDim2.new(1, 0, 0, 30), ZIndex = 8,
           }, ScrollSelect)
           Custom:Create("UICorner", { CornerRadius = UDim.new(0, 3) }, Option)
 
           local OptionButton = Custom:Create("TextButton", {
             Font = CONFIG.Font.Regular, Text = "",
             BackgroundTransparency = 1, BorderSizePixel = 0,
-            Size = UDim2.new(1, 0, 1, 0),
-            ZIndex = 10,
+            Size = UDim2.new(1, 0, 1, 0), ZIndex = 10,
           }, Option)
 
           Custom:Create("TextLabel", {
@@ -1877,8 +1921,7 @@ function Speed_Library:CreateWindow(Config)
             TextTruncate = Enum.TextTruncate.AtEnd,
             BackgroundTransparency = 1, BorderSizePixel = 0,
             Position = UDim2.new(0, 10, 0, 0),
-            Size = UDim2.new(1, -16, 1, 0),
-            ZIndex = 9,
+            Size = UDim2.new(1, -16, 1, 0), ZIndex = 9,
           }, Option)
 
           local ChooseFrame = Custom:Create("Frame", {
@@ -1886,8 +1929,7 @@ function Speed_Library:CreateWindow(Config)
             AnchorPoint = Vector2.new(0, 0.5),
             BackgroundColor3 = CONFIG.Theme.Primary, BorderSizePixel = 0,
             Position = UDim2.new(0, 2, 0.5, 0),
-            Size = UDim2.fromOffset(0, 0),
-            ZIndex = 9,
+            Size = UDim2.fromOffset(0, 0), ZIndex = 9,
           }, Option)
           Custom:Create("UIStroke", {
             Color = CONFIG.Theme.Primary, Thickness = 1.2, Transparency = 1,
@@ -1923,9 +1965,7 @@ function Speed_Library:CreateWindow(Config)
           Selecting = Selecting or {}
 
           Funcs:Clear()
-          for _, Drop in ipairs(NewList) do
-            Funcs:AddOption(Drop)
-          end
+          for _, Drop in ipairs(NewList) do Funcs:AddOption(Drop) end
           Funcs:Set(Selecting, Opts.NoCallback == true)
         end
 
@@ -1933,14 +1973,37 @@ function Speed_Library:CreateWindow(Config)
           return Funcs:Refresh(NewList, Selecting, Opts)
         end
 
-        -- pilih initial: saved dulu, kalau ngga ada pakai default
         local InitialSelect = Saved or Default
         Funcs:Refresh(Options, InitialSelect)
         IsInitial = false
+
+        OnThemeChange(function()
+          if not Dropdown.Parent then return end
+          SelectOptionsFrame.BackgroundColor3 = CONFIG.Theme.Panel
+          OptionSelecting.TextColor3 = CONFIG.Theme.Text
+          DropdownArrowImg.ImageColor3 = CONFIG.Theme.Text
+          SearchBar.BackgroundColor3 = CONFIG.Theme.Background
+          SearchBar.TextColor3 = CONFIG.Theme.Text
+          SearchBar.BorderColor3 = CONFIG.Theme.Stroke
+          for _, Opt in ipairs(ScrollSelect:GetChildren()) do
+            if Opt:IsA("Frame") and Opt.Name == "Option" then
+              Opt.BackgroundColor3 = CONFIG.Theme.Panel
+              local t = Opt:FindFirstChild("OptionText")
+              if t then t.TextColor3 = CONFIG.Theme.Text end
+              local c = Opt:FindFirstChild("ChooseFrame")
+              if c then
+                c.BackgroundColor3 = CONFIG.Theme.Primary
+                local s = c:FindFirstChildOfClass("UIStroke")
+                if s then s.Color = CONFIG.Theme.Primary end
+              end
+            end
+          end
+        end)
+
         return Funcs
       end
 
-      -- ═══════ AddPanel ═══════
+      -- ═══ Panel ═══
       function Item:AddPanel(PConfig)
         local PTitle   = Get(PConfig, 1, "Title", "")
         local PContent = Get(PConfig, 2, "Content", "")
@@ -1958,8 +2021,7 @@ function Speed_Library:CreateWindow(Config)
         local PanelHeader = Custom:Create("TextButton", {
           Font = CONFIG.Font.Regular, Text = "",
           BackgroundTransparency = 1, BorderSizePixel = 0,
-          Size = UDim2.new(1, 0, 0, HeaderH),
-          ZIndex = 7,
+          Size = UDim2.new(1, 0, 0, HeaderH), ZIndex = 7,
         }, Panel)
 
         local Arrow = Custom:Create("ImageLabel", {
@@ -1968,8 +2030,7 @@ function Speed_Library:CreateWindow(Config)
           AnchorPoint = Vector2.new(1, 0.5),
           BackgroundTransparency = 1, BorderSizePixel = 0,
           Position = UDim2.new(1, -10, 0, HeaderH / 2),
-          Size = UDim2.fromOffset(20, 20),
-          ZIndex = 8,
+          Size = UDim2.fromOffset(20, 20), ZIndex = 8,
         }, Panel)
 
         local PanelBody = Custom:Create("Frame", {
@@ -1977,8 +2038,7 @@ function Speed_Library:CreateWindow(Config)
           AnchorPoint = Vector2.new(0.5, 0),
           BackgroundTransparency = 1, BorderSizePixel = 0,
           Position = UDim2.new(0.5, 0, 0, HeaderH + 4),
-          Size = UDim2.new(1, 0, 0, 0),
-          ZIndex = 6,
+          Size = UDim2.new(1, 0, 0, 0), ZIndex = 6,
         }, Panel)
         local BodyList = Custom:Create("UIListLayout", {
           Padding = UDim.new(0, 3),
@@ -1998,10 +2058,7 @@ function Speed_Library:CreateWindow(Config)
           }, t)
         end
 
-        Base.Apply = function(h)
-          HeaderH = h
-          Relayout(false)
-        end
+        Base.Apply = function(h) HeaderH = h; Relayout(false) end
         Relayout(false)
 
         BodyList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
@@ -2023,21 +2080,26 @@ function Speed_Library:CreateWindow(Config)
           SubCount += 1
 
           local Btn = Custom:Create("TextButton", {
-            Font = CONFIG.Font.Bold,
-            Text = "  " .. t,
+            Font = CONFIG.Font.Bold, Text = "  " .. t,
             TextColor3 = CONFIG.Theme.Text, TextSize = 12,
             TextXAlignment = Enum.TextXAlignment.Left,
             BackgroundColor3 = CONFIG.Theme.Secondary,
             BackgroundTransparency = 0.3, BorderSizePixel = 0,
             LayoutOrder = SubCount,
-            Size = UDim2.new(1, -10, 0, 28),
-            ZIndex = 7,
+            Size = UDim2.new(1, -10, 0, 28), ZIndex = 7,
           }, PanelBody)
           Custom:Create("UICorner", { CornerRadius = UDim.new(0, 3) }, Btn)
 
           Btn.Activated:Connect(function()
             CircleClick(Btn)
             SafeCall(cb)
+          end)
+
+          OnThemeChange(function()
+            if Btn.Parent then
+              Btn.BackgroundColor3 = CONFIG.Theme.Secondary
+              Btn.TextColor3 = CONFIG.Theme.Text
+            end
           end)
         end
 
@@ -2055,16 +2117,13 @@ function Speed_Library:CreateWindow(Config)
           SubCount += 1
 
           local Btn = Custom:Create("TextButton", {
-            Font = CONFIG.Font.Bold,
-            Text = "",
-            TextSize = 12,
-            TextColor3 = CONFIG.Theme.Text,
+            Font = CONFIG.Font.Bold, Text = "",
+            TextSize = 12, TextColor3 = CONFIG.Theme.Text,
             TextXAlignment = Enum.TextXAlignment.Left,
             BackgroundColor3 = CONFIG.Theme.Secondary,
             BackgroundTransparency = 0.3, BorderSizePixel = 0,
             LayoutOrder = SubCount,
-            Size = UDim2.new(1, -10, 0, 28),
-            ZIndex = 7,
+            Size = UDim2.new(1, -10, 0, 28), ZIndex = 7,
           }, PanelBody)
           Custom:Create("UICorner", { CornerRadius = UDim.new(0, 3) }, Btn)
 
@@ -2072,9 +2131,7 @@ function Speed_Library:CreateWindow(Config)
             state.Value = Value == true
             Btn.Text = "  " .. t .. "   [" .. (state.Value and "ON" or "OFF") .. "]"
             Btn.TextColor3 = state.Value and CONFIG.Theme.Primary or CONFIG.Theme.Text
-            if not IsInitial then
-              AutoSave:Set(key, state.Value)
-            end
+            if not IsInitial then AutoSave:Set(key, state.Value) end
             SafeCall(cb, state.Value)
           end
 
@@ -2087,6 +2144,10 @@ function Speed_Library:CreateWindow(Config)
           IsInitial = false
           return state
         end
+
+        OnThemeChange(function()
+          if Panel.Parent then Arrow.ImageColor3 = CONFIG.Theme.Text end
+        end)
 
         return Funcs_Panel
       end
@@ -2110,31 +2171,41 @@ end
 -- ═══════════════════════════════════════════════════
 --  PUBLIC API
 -- ═══════════════════════════════════════════════════
-function Speed_Library:SetTheme(t) Custom:SetTheme(t) end
+function Speed_Library:SetTheme(t) Custom:SetTheme(t, false) end
 function Speed_Library:SetFont(f)  Custom:SetFont(f)  end
 function Speed_Library:GetConfig() return Custom:GetConfig() end
 
--- API Auto Save
+-- Theme preset
+function Speed_Library:SetPreset(name)
+  local theme = self.Themes[name]
+  if not theme then
+    local names = {}
+    for k in pairs(self.Themes) do table.insert(names, k) end
+    table.sort(names)
+    warn("[KingAkbarUI] Theme '" .. tostring(name) .. "' tidak ditemukan. Tersedia: " ..
+         table.concat(names, ", "))
+    return false
+  end
+  Custom:SetTheme(theme, false)
+  return true
+end
+
+function Speed_Library:GetThemes()
+  local names = {}
+  for k in pairs(self.Themes) do table.insert(names, k) end
+  table.sort(names)
+  return names
+end
+
+-- Auto Save API
 function Speed_Library:SetAutoSave(bool)
   AutoSave.Enabled = bool == true
   if AutoSave.Enabled then AutoSave:Flush() end
 end
-
-function Speed_Library:SaveNow()
-  AutoSave:Flush()
-end
-
-function Speed_Library:ClearSave()
-  AutoSave:Clear()
-end
-
-function Speed_Library:SetSaveFile(name)
-  AutoSave:SetFile(name)
-end
-
-function Speed_Library:GetSaveData()
-  return AutoSave.Data
-end
+function Speed_Library:SaveNow()      AutoSave:Flush() end
+function Speed_Library:ClearSave()    AutoSave:Clear() end
+function Speed_Library:SetSaveFile(n) AutoSave:SetFile(n) end
+function Speed_Library:GetSaveData()  return AutoSave.Data end
 
 function Speed_Library:Destroy()
   AutoSave:Flush()
