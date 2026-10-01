@@ -38,11 +38,20 @@ local function SafeGet(key, fallback)
   return v
 end
 
+local SavePending = false
+
 local function SafeSet(key, value)
   if type(SaveConfig) ~= "table" then return end
+  if SaveConfig[key] == value then return end -- tidak berubah, tidak perlu simpan
   SaveConfig[key] = value
-  if AutoSave and type(Store) == "function" then
-    task.spawn(Store, SaveConfig)
+  -- debounce: banyak perubahan beruntun (mis. saat load) cukup 1x simpan
+  if AutoSave and type(Store) == "function" and not SavePending then
+    SavePending = true
+    task.delay(0.5, function()
+      SavePending = false
+      local ok, err = pcall(Store, SaveConfig)
+      if not ok then warn("[FuncsV3] Gagal menyimpan config: " .. tostring(err)) end
+    end)
   end
 end
 
@@ -131,17 +140,15 @@ function FuncsV3:Dropdown(Tab, Name, Content, Multi, Options, Default, Callback)
   Name     = Checker(Name, "string", tostring(Name))
   Content  = Checker(Content, "string", tostring(Content))
   Multi    = Checker(Multi, "boolean", false)
-  Options  = Checker(Options, "table", { "" })
+  Options  = Checker(Options, "table", {})
   Callback = Checker(Callback, "function", function() end)
 
-  local saved = SafeGet(Name, nil)
+  -- hanya "Save" yang memuat data tersimpan; Default eksplisit selalu dihormati
   local _default
-
   if Default == "Save" then
-    _default = CleanTable(saved or "")
+    _default = CleanTable(SafeGet(Name, nil))
   else
-    local base = saved or Default
-    _default = CleanTable(base)
+    _default = CleanTable(Default)
   end
 
   return Tab:AddDropdown({
@@ -184,11 +191,13 @@ end
 
 -- ── Slider ─────────────────────────────────────────
 -- Default: number ATAU "Save"
-function FuncsV3:Slider(Tab, Name, Content, Min, Max, Default, Callback)
+-- Increment (opsional, argumen terakhir) default 1
+function FuncsV3:Slider(Tab, Name, Content, Min, Max, Default, Callback, Increment)
   Name     = Checker(Name, "string", tostring(Name))
   Content  = Checker(Content, "string", tostring(Content))
   Min      = Checker(Min, "number", 0)
   Max      = Checker(Max, "number", 100)
+  Increment = Checker(Increment, "number", 1)
   Callback = Checker(Callback, "function", function() end)
 
   local _default
@@ -203,6 +212,7 @@ function FuncsV3:Slider(Tab, Name, Content, Min, Max, Default, Callback)
   return Tab:AddSlider({
     Title    = Name,
     Content  = Content,
+    Increment = Increment,
     Min      = Min,
     Max      = Max,
     Default  = _default,
