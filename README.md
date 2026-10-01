@@ -1,424 +1,325 @@
-# ⚡ King Akbar UI — SpeedHub Framework
+# ⚡ King Akbar UI — SpeedHub & UIWrapper
 
-> Framework User Interface Luau berperforma tinggi, responsif, dan kaya fitur untuk Roblox script development. Didesain secara khusus untuk kompatibilitas lintas platform (**Mobile & PC**), mendukung tema modern *Dark Industrial Neon*, efek riak interaktif (*ripple effect*), serta sistem manajemen memori dan GUI terisolasi.
+> Framework User Interface Luau modular untuk Roblox scripting yang menggabungkan **Core GUI Engine** (`kingAkbarui-speedHub`) dengan **Config & State Manager Wrapper** (`UIWrapper.lua`). Dirancang khusus untuk mempermudah pembuatan script hub modern, responsif di Mobile & PC, serta mendukung penyimpanan konfigurasi otomatis (*Auto-Save Config*).
 
 ---
 
 ## 📑 Daftar Isi
 
-- [Fitur Utama](#-fitur-utama)
-- [Arsitektur & Kompatibilitas](#-arsitektur--kompatibilitas)
-- [Instalasi Cepat](#-instalasi-cepat)
-- [Dokumentasi Lengkap API](#-dokumentasi-lengkap-api)
-  - [1. Library Inisialisasi](#1-library-inisialisasi)
-  - [2. Sistem Notifikasi (`SetNotification`)](#2-sistem-notifikasi-setnotification)
-  - [3. Window Manager (`CreateWindow`)](#3-window-manager-createwindow)
-  - [4. Tab Manager (`CreateTab`)](#4-tab-manager-createtab)
-  - [5. Accordion Section (`AddSection`)](#5-accordion-section-addsection)
-  - [6. Elemen Interaktif](#6-elemen-interaktif)
-    - [Button](#-button)
-    - [Toggle (dengan Kontrol Programatik)](#-toggle-dengan-kontrol-programatik)
-    - [Slider (Drag & Direct Text Input)](#-slider-drag--direct-text-input)
-    - [Input / Textbox](#-input--textbox)
-    - [Dropdown (Search Bar & Multi-Select)](#-dropdown-search-bar--multi-select)
-    - [Paragraph (Auto-Wrap Dynamic Height)](#-paragraph-auto-wrap-dynamic-height)
-    - [Separator & Line](#-separator--line)
-- [Contoh Script Lengkap (Boilerplate)](#-contoh-script-lengkap-boilerplate)
-- [Daftar Aset ID Default](#-daftar-aset-id-default)
-- [Troubleshooting & FAQ](#-troubleshooting--faq)
+- [Arsitektur Modul](#-arsitektur-modul)
+- [Pemasangan & Quick Start](#-pemasangan--quick-start)
+- [Dokumentasi Modul 1: UIWrapper.lua](#-dokumentasi-modul-1-uiwrapperlua)
+  - [Inisialisasi Tabel (`SetTable` & `GetTable`)](#inisialisasi-tabel-settable--gettable)
+  - [Toggle Helper](#toggle-helper)
+  - [Button Helper](#button-helper)
+  - [Slider Helper](#slider-helper)
+  - [Dropdown Helper](#dropdown-helper)
+  - [Textbox / Input Helper](#textbox--input-helper)
+  - [Paragraph Helper](#paragraph-helper)
+- [Dokumentasi Modul 2: Core Library (kingAkbarui-speedHub)](#-dokumentasi-modul-2-core-library-kingakbarui-speedhub)
+  - [Window Manager (`CreateWindow`)](#window-manager-createwindow)
+  - [Notifikasi Pop-up (`SetNotification`)](#notifikasi-pop-up-setnotification)
+  - [Tab & Section Navigation](#tab--section-navigation)
+- [Contoh Penerapan Penuh (Production Boilerplate)](#-contoh-penerapan-penuh-production-boilerplate)
+- [Aset & Ikon Bawaan](#-aset--ikon-bawaan)
+- [Kompatibilitas Executor](#-kompatibilitas-executor)
 
 ---
 
-## 🚀 Fitur Utama
+## 🏗️ Arsitektur Modul
 
-- 📱 **Mobile Touch Optimization:** Dilengkapi floating toggle button berlogo kustom yang dapat digeser (*draggable*) untuk menyembunyikan/membuka GUI di layar HP tanpa memakan ruang pandang.
-- 🛡️ **Built-in Anti-AFK Engine:** Terintegrasi langsung dengan `VirtualUser` dan event `Player.Idled` untuk mencegah *Kick Error Code 268 / 20-minute idle disconnect*.
-- 🔒 **Safe CoreGui Parenting:** Mendukung `gethui()`, `cloneref()`, serta fallback `CoreGui` dan `PlayerGui` (Roblox Studio) agar script aman dari deteksi UI client dasar.
-- 🔎 **Smart Dropdown with Search:** Panel dropdown independen dengan fitur filtering teks instan dan dukungan multi-select.
-- 📐 **Dynamic Layout Engine:** Tinggi elemen teks, deskripsi, dan accordion dihitung secara real-time berdasarkan `TextBounds` dan pembungkus baris otomatis.
+Repository ini memisahkan logika UI menjadi dua modul mandiri agar kode rapi dan mudah di-maintain:
 
----
+```text
+kingAkbarUi-Speedhub/
+├── kingAkbarui-speedHub  --> Core Engine: Render GUI, Tween, Anti-AFK, Draggable Mobile Toggle
+└── UIWrapper.lua         --> State & Config: Type-checker, nil-safety, sinkronisasi tabel config
+```
 
-## 🛠️ Arsitektur & Kompatibilitas
-
-Framework ini telah diuji dan kompatibel dengan berbagai level executor mobile maupun desktop:
-
-| Platform | Executor yang Didukung |
-| :--- | :--- |
-| **Android / iOS** | Delta, Fluxus Mobile, Vega X, Hydrogen, Codex, Cryptic |
-| **Windows / macOS** | Solara, Wave, Synapse Z, MacSploit, Roblox Studio |
+1. **`kingAkbarui-speedHub` (Core Engine):** Mengatur instansiasi ScreenGui, Tween animasi, interaksi drag touch/mouse, layout scrolling otomatis, dan Anti-AFK engine.
+2. **`UIWrapper.lua` (State/Config Layer):** Berfungsi sebagai jembatan deklaratif. Pengembang tidak perlu menulis validasi tipe data berulang kali atau manual menyimpan value toggle/slider ke tabel config; wrapper ini mengelolanya secara otomatis.
 
 ---
 
-## 📦 Instalasi Cepat
+## 🚀 Pemasangan & Quick Start
 
-Muat library secara langsung ke dalam executor menggunakan `loadstring` dan `game:HttpGet`:
+Muat kedua modul sekaligus ke dalam script menggunakan `game:HttpGet`:
 
 ```lua
+-- 1. Load Core Library GUI
 local Speed_Library = loadstring(game:HttpGet("[https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/kingAkbarui-speedHub](https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/kingAkbarui-speedHub)"))()
+
+-- 2. Load Config & Element Wrapper
+local Helper = loadstring(game:HttpGet("[https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/UIWrapper.lua](https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/UIWrapper.lua)"))()
 ```
 
 ---
 
-## 📖 Dokumentasi Lengkap API
+## 📦 Dokumentasi Modul 1: UIWrapper.lua
 
-Library mendukung format konfigurasi berupa **Dictionary Key** (`Title = ...`) maupun **Indexed Array** (`[1] = ...`).
+`UIWrapper` bertugas membungkus pemanggilan elemen UI ke section dengan validasi tipe data otomatis dan sinkronisasi config.
 
----
-
-### 1. Library Inisialisasi
-
-Ketika library dimuat, fungsi **Anti-AFK** otomatis aktif di background. Properti status framework:
+### Inisialisasi Tabel (`SetTable` & `GetTable`)
+Hubungkan tabel konfigurasi script kamu ke wrapper sebelum membuat elemen UI:
 
 ```lua
--- Memeriksa apakah GUI telah ditutup permanen oleh user
-print(Speed_Library.Unloaded) -- boolean (true/false)
+local ConfigTable = {
+    ["Auto Attack"] = true,
+    ["WalkSpeed"] = 25,
+    ["Selected Island"] = {"Starter Island"}
+}
+
+-- Daftarkan tabel ke wrapper
+Helper:SetTable(ConfigTable)
+
+-- Mengambil referensi tabel aktif
+local activeConfig = Helper:GetTable()
 ```
 
 ---
 
-### 2. Sistem Notifikasi (`SetNotification`)
-
-Menampilkan notifikasi pop-up animasi di pojok kanan bawah dengan stack otomatis ke atas.
+### Toggle Helper
+Membuat switch on/off. Jika parameter default diisi `"Save"`, wrapper akan mengambil nilai awal langsung dari `ConfigTable[Name]`.
 
 ```lua
-local Notification = Speed_Library:SetNotification({
-    Title = "Sistem",                     -- [1] Judul utama
-    Description = "Berhasil",             -- [2] Sub-judul (Aksen Merah)
-    Content = "Script berhasil dimuat!",  -- [3] Pesan detail
-    Time = 0.5,                           -- [5] Durasi tween animasi (detik)
-    Delay = 4                             -- [6] Waktu tampil sebelum auto-close (detik)
-})
+Helper:Toggle(Section, Name, Content, Default, Callback, CustomKey)
+```
+- **`Section`** *(Instance)*: Objek section induk.
+- **`Name`** *(string)*: Judul toggle.
+- **`Content`** *(string)*: Deskripsi fitur.
+- **`Default`** *(boolean / "Save")*: Gunakan `"Save"` untuk membaca dari tabel config, atau berikan nilai boolean default (`true`/`false`).
+- **`Callback`** *(function)*: Fungsi yang dipicu saat toggle berubah `function(boolean)`.
+- **`CustomKey`** *(string, opsional)*: Key pengganti jika nama judul mengandung karakter format/emoji.
 
--- Menutup notifikasi secara manual sebelum delay habis:
--- Notification:Close()
+```lua
+Helper:Toggle(MainSection, "Auto Farm", "Menyerang target otomatis", "Save", function(state)
+    print("Auto Farm status:", state)
+end)
 ```
 
 ---
 
-### 3. Window Manager (`CreateWindow`)
+### Button Helper
+Membuat tombol eksekusi interaktif berikon.
 
-Membuat jendela utama script hub.
+```lua
+Helper:Button(Section, Name, Content, Callback, Icon)
+```
+- **`Icon`** *(string, opsional)*: Asset ID gambar (Default: `"rbxassetid://16932740082"`).
+
+```lua
+Helper:Button(MainSection, "Teleport Spawn", "Kembali ke safe zone", function()
+    local char = game.Players.LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(0, 50, 0)
+    end
+end)
+```
+
+---
+
+### Slider Helper
+Membuat slider pengatur angka dengan dukungan pembacaan config.
+
+```lua
+Helper:Slider(Section, Name, Content, Min, Max, Increment, Default, Callback, CustomKey)
+```
+
+```lua
+Helper:Slider(MainSection, "WalkSpeed", "Atur kecepatan lari", 16, 150, 1, "Save", function(val)
+    local hum = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+    if hum then hum.WalkSpeed = val end
+end)
+```
+
+---
+
+### Dropdown Helper
+Membuat menu pilihan single/multi select dengan fitur pencarian teks.
+
+```lua
+Helper:Dropdown(Section, Name, Content, Multi, Options, Default, Callback, CustomKey)
+```
+
+```lua
+Helper:Dropdown(MainSection, "Pilih Target", "Daftar musuh di area", false, {"Slime", "Goblin", "Dragon"}, "Save", function(selected)
+    print("Target terpilih:", selected[1])
+end)
+```
+
+---
+
+### Textbox / Input Helper
+Membuat input form satu baris dengan sinkronisasi otomatis saat focus hilang (*Enter*).
+
+```lua
+Helper:Textbox(Section, Name, Content, Default, Callback, CustomKey)
+```
+
+```lua
+Helper:Textbox(MainSection, "Cari Pemain", "Ketik nama pemain", "Save", function(text)
+    print("Nama diinput:", text)
+end)
+```
+
+---
+
+### Paragraph Helper
+Menampilkan kotak deskripsi informasi.
+
+```lua
+Helper:Paragraph(MainSection, "Status Sistem", "Koneksi stabil | Ping: 40ms")
+```
+
+---
+
+## 🎨 Dokumentasi Modul 2: Core Library (kingAkbarui-speedHub)
+
+### Window Manager (`CreateWindow`)
+Membuat frame utama script hub:
 
 ```lua
 local Window = Speed_Library:CreateWindow({
-    Title = "KING AKBAR",                -- [1] Nama utama script
-    Description = "SPEED HUB",           -- [2] Tagline / versi (berwarna aksen)
-    TabWidth = 120,                      -- [3] Lebar panel navigasi tab kiri (offset px)
-    SizeUi = UDim2.fromOffset(550, 315)  -- [4] Dimensi awal jendela utama
+    Title = "KING AKBAR",                -- Nama script hub utama
+    Description = "SPEED HUB",           -- Label teks aksen merah
+    TabWidth = 125,                      -- Lebar panel navigasi kiri (px)
+    SizeUi = UDim2.fromOffset(560, 320)  -- Ukuran keseluruhan jendela
 })
 ```
 
 ---
 
-### 4. Tab Manager (`CreateTab`)
-
-Membuat kategori tab di panel navigasi sebelah kiri.
+### Notifikasi Pop-up (`SetNotification`)
+Menampilkan toast message di sudut kanan bawah layar:
 
 ```lua
-local MainTab = Window:CreateTab({
-    Name = "Main Farm",                  -- [1] Nama tab
-    Icon = "rbxassetid://7734010488"     -- [2] Icon asset ID Roblox
-})
-
-local PlayerTab = Window:CreateTab({
-    Name = "Local Player",
-    Icon = "rbxassetid://7733964719"
+Speed_Library:SetNotification({
+    Title = "King Akbar",
+    Description = "System",
+    Content = "Modul berhasil dimuat secara optimal!",
+    Time = 0.4,                          -- Durasi animasi transisi
+    Delay = 3.5                          -- Waktu tampil sebelum tertutup (detik)
 })
 ```
 
 ---
 
-### 5. Accordion Section (`AddSection`)
-
-Membuat grup penampung elemen berbentuk drop-down accordion lipat.
-
+### Tab & Section Navigation
 ```lua
--- Parameter:
--- 1. Title (string): Judul section
--- 2. OpenSection (boolean): true = terbuka saat dimuat, false = terlipat
-local FarmSection = MainTab:AddSection("Auto Farming Options", true)
-local TeleportSection = MainTab:AddSection("Teleport Lokasi", false)
+-- Membuat Tab Kiri
+local TabMain = Window:CreateTab({
+    Name = "Farming",
+    Icon = "rbxassetid://7734010488"
+})
+
+-- Membuat Accordion Section Lipat
+-- Parameter 2: true = terbuka default, false = terlipat default
+local SectionCombat = TabMain:AddSection("Pengaturan Tempur", true)
+local SectionLoot   = TabMain:AddSection("Filter Drop Barang", false)
 ```
 
 ---
 
-### 6. Elemen Interaktif
+## 💡 Contoh Penerapan Penuh (Production Boilerplate)
 
-Semua elemen di bawah ini dibuat dari objek section yang telah diinisialisasi (`FarmSection`, dll).
-
-#### 🔘 Button
-Tombol aksi dengan efek riak (ripple) saat ditekan.
-```lua
-FarmSection:AddButton({
-    Title = "Claim Gift",                -- [1] Judul tombol
-    Content = "Klaim hadiah gratis",     -- [2] Keterangan/deskripsi
-    Icon = "rbxassetid://16932740082",   -- [3] Icon tombol kanan
-    Callback = function()                -- [4] Fungsi saat tombol diklik
-        print("Hadiah berhasil di-claim!")
-    end
-})
-```
-
----
-
-#### 🔀 Toggle (dengan Kontrol Programatik)
-Switch on/off dengan animasi indikator warna dinamis.
-```lua
-local MyToggle = FarmSection:AddToggle({
-    Title = "Auto Attack",
-    Content = "Serang musuh terdekat otomatis",
-    Default = false,                     -- [3] Status default (true / false)
-    Callback = function(State)          -- [4] Return boolean status
-        print("Toggle aktif:", State)
-    end
-})
-
--- Kontrol eksternal/programatik:
-MyToggle:Set(true)  -- Mengaktifkan toggle secara instan dan memanggil callback
-MyToggle:Set(false) -- Menonaktifkan toggle
-print(MyToggle.Value) -- Cek status saat ini
-```
-
----
-
-#### 🎚️ Slider (Drag & Direct Text Input)
-Slider pengatur nilai numerik yang dapat digeser atau diketik langsung nilainya pada kotak angka.
-```lua
-local MySlider = FarmSection:AddSlider({
-    Title = "WalkSpeed Multiplier",
-    Content = "Sesuaikan kecepatan berjalan",
-    Increment = 1,                       -- [3] Nilai pembulatan step
-    Min = 16,                            -- [4] Batas minimal
-    Max = 200,                           -- [5] Batas maksimal
-    Default = 16,                        -- [6] Nilai awal
-    Callback = function(Value)          -- [7] Return number value
-        local Char = game.Players.LocalPlayer.Character
-        if Char and Char:FindFirstChild("Humanoid") then
-            Char.Humanoid.WalkSpeed = Value
-        end
-    end
-})
-
--- Kontrol programatik:
-MySlider:Set(50) -- Memindahkan posisi slider ke 50 dan memicu callback
-```
-
----
-
-#### ⌨️ Input / Textbox
-Form isian string satu baris.
-```lua
-local MyInput = FarmSection:AddInput({
-    Title = "Teleport Target",
-    Content = "Masukkan sebagian nama pemain",
-    Default = "",                        -- Nilai teks awal
-    Callback = function(Text)           -- Terpanggil saat user menekan Enter / FocusLost
-        print("Input diterima:", Text)
-    end
-})
-
--- Kontrol programatik:
-MyInput:Set("BarXYZ") -- Mengisi nilai input box
-```
-
----
-
-#### 🔽 Dropdown (Search Bar & Multi-Select)
-Menu seleksi interaktif dengan search filter built-in.
-```lua
--- Single Selection
-local IslandDropdown = FarmSection:AddDropdown({
-    Title = "Pilih Lokasi",
-    Content = "Pilih pulau untuk teleportasi",
-    Multi = false,                       -- false = Single Select
-    Options = {"Pulau Pemula", "Gurun Pasir", "Gunung Es", "Lautan Api"},
-    Default = {"Pulau Pemula"},          -- Harus berupa tabel string
-    Callback = function(SelectedTable)  -- Return tabel opsi terpilih
-        print("Lokasi terpilih:", SelectedTable[1])
-    end
-})
-
--- Multi Selection
-local FilterDropdown = FarmSection:AddDropdown({
-    Title = "Filter Rarity",
-    Content = "Pilih tier item yang ingin disimpan",
-    Multi = true,                        -- true = Multi Select
-    Options = {"Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"},
-    Default = {"Legendary", "Mythic"},
-    Callback = function(SelectedTable)
-        print("Daftar tier aktif:")
-        for _, tier in ipairs(SelectedTable) do
-            print("- " .. tier)
-        end
-    end
-})
-
--- Method Manipulasi Dropdown:
-IslandDropdown:AddOption("Pulau Rahasia")             -- Menambah opsi baru
-IslandDropdown:Clear()                                -- Menghapus seluruh opsi
-IslandDropdown:Refresh({"Kota A", "Kota B"}, {"Kota A"}) -- Reset total opsi & default
-IslandDropdown:Set({"Kota B"})                       -- Memilih opsi secara programatik
-```
-
----
-
-#### 📄 Paragraph (Auto-Wrap Dynamic Height)
-Penampil teks informasi statis maupun dinamis.
-```lua
-local InfoParagraph = FarmSection:AddParagraph({
-    Title = "Status Server",
-    Content = "Memeriksa status koneksi..."
-})
-
--- Memperbarui isi paragraph sewaktu-waktu:
-InfoParagraph:Set({
-    Title = "Status Server: Stabil",
-    Content = "FPS: 60 | Ping: 45ms | Server Uptime: 3 Jam"
-})
-```
-
----
-
-#### ➖ Separator & Line
-Elemen dekoratif untuk membagi kategori dalam section.
-```lua
--- Separator dengan teks judul berlatar gradien:
-local Sep = FarmSection:AddSeperator({
-    Title = "Pengaturan Lanjutan"
-})
-Sep:Set({ Title = "Opsi Lainnya" }) -- Mengubah judul separator
-
--- Garis pembatas tipis bergradien polos:
-FarmSection:AddLine()
-```
-
----
-
-## 💡 Contoh Script Lengkap (Boilerplate)
-
-Contoh nyata menyusun hub fungsional dari awal sampai akhir:
+Script utuh siap pakai yang menggabungkan **`kingAkbarui-speedHub`** dan **`UIWrapper.lua`** lengkap dengan persistensi file JSON (*Save/Load Config* ke executor):
 
 ```lua
+-- Inisialisasi Library
 local Speed_Library = loadstring(game:HttpGet("[https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/kingAkbarui-speedHub](https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/kingAkbarui-speedHub)"))()
+local Helper = loadstring(game:HttpGet("[https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/UIWrapper.lua](https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/UIWrapper.lua)"))()
 
--- 1. Buat Window
+-- Inisialisasi Penyimpanan Config Lokal
+local ConfigPath = "KingAkbarHub_Config.json"
+local MyConfig = {
+    ["Auto Farm"] = false,
+    ["Speed Multiplier"] = 16,
+    ["Target Area"] = {"Starter Area"},
+    ["Player Target"] = ""
+}
+
+-- Load Config dari Disk jika ada
+if isfile and readfile and isfile(ConfigPath) then
+    pcall(function()
+        local decoded = game:GetService("HttpService"):JSONDecode(readfile(ConfigPath))
+        for k, v in pairs(decoded) do
+            MyConfig[k] = v
+        end
+    end)
+end
+
+-- Hubungkan tabel ke Helper
+Helper:SetTable(MyConfig)
+
+-- Buat Window Utama
 local Window = Speed_Library:CreateWindow({
     Title = "KING AKBAR",
-    Description = "SPEED HUB V2",
+    Description = "SPEED HUB",
     TabWidth = 125,
     SizeUi = UDim2.fromOffset(560, 320)
 })
 
--- 2. Tampilkan Notifikasi Pembuka
 Speed_Library:SetNotification({
-    Title = "King Akbar UI",
-    Description = "Loaded",
-    Content = "Selamat datang, framework berhasil diinisialisasi!",
+    Title = "Hub",
+    Description = "Ready",
+    Content = "Semua modul berhasil diinisialisasi!",
     Delay = 3
 })
 
--- 3. Inisialisasi Tab
-local TabMain = Window:CreateTab({ Name = "Main", Icon = "rbxassetid://7734010488" })
-local TabPlayer = Window:CreateTab({ Name = "Player", Icon = "rbxassetid://7733964719" })
+-- Tab 1: Farming
+local TabFarm = Window:CreateTab({ Name = "Farm", Icon = "rbxassetid://7734010488" })
+local SecFarm = TabFarm:AddSection("Automasi Utama", true)
 
--- 4. Inisialisasi Section
-local SecFarm = TabMain:AddSection("Farming Otomatis", true)
-local SecMove = TabPlayer:AddSection("Karakter & Movement", true)
+Helper:Toggle(SecFarm, "Auto Farm", "Menyerang musuh otomatis", "Save", function(state)
+    _G.AutoFarm = state
+    print("Auto farm aktif:", state)
+end)
 
--- 5. Tambah Komponen
-SecFarm:AddToggle({
-    Title = "Auto Farm Level",
-    Content = "Mencari monster terdekat dan menyerang otomatis",
-    Default = false,
-    Callback = function(state)
-        _G.AutoFarm = state
-        print("Farming:", state)
+Helper:Slider(SecFarm, "Speed Multiplier", "Kecepatan berjalan karakter", 16, 120, 2, "Save", function(val)
+    local hum = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+    if hum then hum.WalkSpeed = val end
+end)
+
+Helper:Dropdown(SecFarm, "Target Area", "Pilih zona berburu", false, {"Starter Area", "Desert Zone", "Ice Cavern"}, "Save", function(selected)
+    print("Area terpilih:", selected[1])
+end)
+
+-- Tab 2: Pengaturan & Simpan Config
+local TabSettings = Window:CreateTab({ Name = "Settings", Icon = "rbxassetid://7733964719" })
+local SecConfig = TabSettings:AddSection("Manajemen Konfigurasi", true)
+
+Helper:Button(SecConfig, "Save Configuration", "Simpan settingan ke penyimpanan executor", function()
+    if writefile then
+        local encoded = game:GetService("HttpService"):JSONEncode(Helper:GetTable())
+        writefile(ConfigPath, encoded)
+        Speed_Library:SetNotification({
+            Title = "Config",
+            Description = "Saved",
+            Content = "Data berhasil disimpan ke " .. ConfigPath,
+            Delay = 3
+        })
     end
-})
+end)
 
-SecFarm:AddDropdown({
-    Title = "Target Monster",
-    Content = "Pilih jenis monster sasaran",
-    Multi = false,
-    Options = {"Slime [Lv. 1]", "Goblin [Lv. 15]", "Orc [Lv. 50]"},
-    Default = {"Slime [Lv. 1]"},
-    Callback = function(val)
-        print("Sasaran:", val[1])
-    end
-})
-
-SecFarm:AddLine()
-
-SecFarm:AddButton({
-    Title = "Reset Position",
-    Content = "Kembali ke titik awal respawn",
-    Icon = "rbxassetid://16932740082",
-    Callback = function()
-        local char = game.Players.LocalPlayer.Character
-        if char then char:BreakJoints() end
-    end
-})
-
-SecMove:AddSlider({
-    Title = "WalkSpeed",
-    Content = "Atur kecepatan lari",
-    Min = 16,
-    Max = 120,
-    Increment = 1,
-    Default = 16,
-    Callback = function(val)
-        local hum = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
-        if hum then hum.WalkSpeed = val end
-    end
-})
-
-SecMove:AddSlider({
-    Title = "JumpPower",
-    Content = "Atur tinggi lompatan",
-    Min = 50,
-    Max = 250,
-    Increment = 5,
-    Default = 50,
-    Callback = function(val)
-        local hum = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
-        if hum then 
-            hum.UseJumpPower = true
-            hum.JumpPower = val 
-        end
-    end
-})
+Helper:Paragraph(SecConfig, "Informasi Script", "Dibuat menggunakan King Akbar SpeedHub UI Engine.")
 ```
 
 ---
 
-## 🎨 Daftar Aset ID Default
+## 🖼️ Aset & Ikon Bawaan
 
-Aset Roblox built-in yang digunakan oleh library:
-
-| Fungsi | Asset ID | URL Preview |
-| :--- | :--- | :--- |
-| **Mobile Open/Close Button** | `rbxassetid://136890595976124` | Ikon toggle floating |
-| **Ripple Click Effect** | `rbxassetid://106471194043211` | Lingkaran blur gradien |
-| **Accordion Arrow Indicator**| `rbxassetid://125609963478878` | Panah segitiga rotasi |
-| **Default Button Icon** | `rbxassetid://7734010488` | Ikon cursor / click |
-| **Dropdown Indicator** | `rbxassetid://90200523188815` | Ikon menu layer |
+| Deskripsi | Asset ID |
+| :--- | :--- |
+| **Mobile Draggable Toggle** | `rbxassetid://136890595976124` |
+| **Ripple Click Effect** | `rbxassetid://106471194043211` |
+| **Accordion Arrow** | `rbxassetid://125609963478878` |
+| **Default Action Icon** | `rbxassetid://16932740082` |
+| **Dropdown Indicator** | `rbxassetid://90200523188815` |
 
 ---
 
-## ❓ Troubleshooting & FAQ
+## 📱 Kompatibilitas Executor
 
-#### 1. Mengapa UI tidak muncul saat di-execute?
-Pastikan executor mendukung pemuatan konten RAW dari GitHub. Jika menggunakan koneksi internet tertentu di Indonesia yang memblokir domain `raw.githubusercontent.com`, gunakan DNS alternatif (1.1.1.1 atau 8.8.8.8).
-
-#### 2. Bagaimana cara membuka menu kembali setelah di-minimize di perangkat Android?
-Saat tombol tanda minus (`-`) di pojok kanan atas ditekan, jendela utama akan tersembunyi dan digantikan oleh tombol mengambang merah di sudut kiri layar. Sentuh tombol tersebut untuk menampilkan jendela utama kembali.
-
-#### 3. Apakah Anti-AFK bisa memicu disconnect dari sistem game?
-Tidak. Anti-AFK bekerja dengan meniru event klik mouse kanan melalui `VirtualUser:Button2Down` dan `VirtualUser:Button2Up` ke engine kamera game, sehingga Roblox menganggap pemain tetap aktif secara natural tanpa mengubah memori status game.
-
----
-
-## 📜 Lisensi & Kontribusi
-
-Proyek ini dirancang secara terbuka untuk komunitas scripter Roblox Luau. Bebas digunakan, dimodifikasi, dan disematkan ke dalam script hub publik maupun privat.
+Framework ini sepenuhnya mendukung eksekusi di:
+- **Mobile (Android/iOS):** Delta, Fluxus Mobile, Vega X, Hydrogen, Codex, Arceus X Neo.
+- **PC (Windows/macOS):** Solara, Wave, MacSploit, Synapse Z, serta environment Roblox Studio.
