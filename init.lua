@@ -5,6 +5,7 @@
 ╚══════════════════════════════════════════════════════════╝
 LAYOUT: Topbar 44px | Sidebar 112px | Section 34px | Item 40px
 Toggle iOS 40x20 | ColorPicker 48x22 | Dropdown 120x24 | Keybind 64x22
+DEFAULT: Tema Mono (Hitam-Putih) | Floating button di KIRI
 ]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -54,14 +55,14 @@ end)
 local CONFIG = {
 	Theme = {
 		Primary    = Color3.fromRGB(255, 255, 255),
-		Background = Color3.fromRGB(10, 10, 10),
-		Secondary  = Color3.fromRGB(25, 25, 25),
+		Background = Color3.fromRGB(5, 5, 5),
+		Secondary  = Color3.fromRGB(22, 22, 22),
 		Panel      = Color3.fromRGB(255, 255, 255),
 		Text       = Color3.fromRGB(255, 255, 255),
-		SubText    = Color3.fromRGB(160, 160, 160),
-		Stroke     = Color3.fromRGB(70, 70, 70),
-		Divider    = Color3.fromRGB(80, 80, 80),
-		LineColor  = Color3.fromRGB(110, 110, 110),
+		SubText    = Color3.fromRGB(155, 155, 155),
+		Stroke     = Color3.fromRGB(255, 255, 255),
+		Divider    = Color3.fromRGB(120, 120, 120),
+		LineColor  = Color3.fromRGB(255, 255, 255),
 	},
 	Font = { Bold = Enum.Font.GothamBold, Regular = Enum.Font.SourceSans },
 	Window = {
@@ -215,6 +216,7 @@ local function MakeDraggable(Handle, Object, Bind)
 	return function() return Moved end
 end
 
+-- ═══════════════ FLOATING BUTTON (KIRI) ═══════════════
 local function CreateFloatingButton()
 	local Gui = NewScreenGui("KingAkbarUI_Floating", 20)
 	local Btn = Custom:Create("ImageButton", {
@@ -222,12 +224,13 @@ local function CreateFloatingButton()
 		BackgroundColor3 = Color3.fromRGB(0, 0, 0),
 		BackgroundTransparency = 0.4,
 		BorderSizePixel = 0, AutoButtonColor = false,
-		Position = UDim2.new(0.85, 0, 0.05, 0),
+		Position = UDim2.new(0, 12, 0.5, -22), -- KIRI, tengah vertikal
 		Size = UDim2.fromOffset(45, 45),
 		Image = CONFIG.Assets.FloatingButton,
 		Visible = false,
 	}, Gui)
 	Custom:Create("UICorner", { CornerRadius = UDim.new(0, 9) }, Btn)
+	Custom:Create("UIStroke", { Color = CONFIG.Theme.Primary, Thickness = 1.2 }, Btn)
 	local DidMove = MakeDraggable(Btn, Btn, BindLib)
 	return Btn, DidMove
 end
@@ -717,7 +720,6 @@ function Speed_Library:CreateWindow(Config)
 	end
 	ConnectButton.Activated:Connect(CloseDropdownPanel)
 
-	-- mini slider (colorpicker)
 	local function MiniSlider(Parent, Label, ChannelColor, Init, OnChange)
 		local Row = Custom:Create("Frame", {
 			BackgroundTransparency = 1, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 24),
@@ -1045,7 +1047,6 @@ function Speed_Library:CreateWindow(Config)
 				return Funcs
 			end
 
-			-- Toggle iOS 40x20
 			function Item:AddToggle(TConfig)
 				local TTitle   = Get(TConfig, 1, "Title", "")
 				local TContent = Get(TConfig, 2, "Content", "")
@@ -1103,7 +1104,6 @@ function Speed_Library:CreateWindow(Config)
 				return Funcs
 			end
 
-			-- Slider
 			function Item:AddSlider(SConfig)
 				local STitle    = Get(SConfig, 1, "Title", "")
 				local SContent  = Get(SConfig, 2, "Content", "")
@@ -1250,7 +1250,6 @@ function Speed_Library:CreateWindow(Config)
 				return Funcs
 			end
 
-			-- Dropdown 120x24
 			function Item:AddDropdown(DConfig)
 				local DTitle   = Get(DConfig, 1, "Title", "")
 				local DContent = Get(DConfig, 2, "Content", "")
@@ -1415,7 +1414,6 @@ function Speed_Library:CreateWindow(Config)
 				return Funcs
 			end
 
-			-- ColorPicker 48x22
 			function Item:AddColorPicker(CConfig)
 				local CTitle   = Get(CConfig, 1, "Title", "")
 				local CContent = Get(CConfig, 2, "Content", "")
@@ -1478,7 +1476,6 @@ function Speed_Library:CreateWindow(Config)
 				return Funcs
 			end
 
-			-- Keybind 64x22
 			function Item:AddKeybind(KConfig)
 				local KTitle   = Get(KConfig, 1, "Title", "")
 				local KContent = Get(KConfig, 2, "Content", "")
@@ -1533,7 +1530,6 @@ function Speed_Library:CreateWindow(Config)
 				return Funcs
 			end
 
-			-- Panel
 			function Item:AddPanel(PConfig)
 				local PTitle   = Get(PConfig, 1, "Title", "")
 				local PContent = Get(PConfig, 2, "Content", "")
