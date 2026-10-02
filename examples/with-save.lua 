@@ -1,76 +1,50 @@
 --[[
-┌────────────────────────────────────────────────────────┐
-│  CONTOH 02: WITH AUTO-SAVE                             │
-│  Semua settingan user otomatis tersimpan ke file JSON. │
-│  Default "Save" = load dari file + simpan tiap kali    │
-│  berubah.                                              │
-└────────────────────────────────────────────────────────┘
+  CONTOH AUTO-SAVE (wrapper FuncsV3)
+  - Nilai dengan Default = "Save" otomatis dimuat dari config & disimpan saat berubah.
+  - Kunci simpanan = NAMA item → pakai nama yang unik.
+  - Config disimpan ke file JSON di folder workspace executor.
 ]]
 
-local Http = game:GetService("HttpService")
+local KA = loadstring(game:HttpGet("https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/loader.lua"))()
+local Library, FuncsV3 = KA.Library, KA.Wrapper
 
--- Load library
-local UI = loadstring(game:HttpGet(
-	"https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/main/loader.lua"
-))()
+local HttpService = game:GetService("HttpService")
+local FILE = "KingAkbar_Config.json"
 
--- ─────────── SETUP AUTO-SAVE ───────────
-local FILE = "myhub_config.json"
-
--- Muat config tersimpan (kalau ada)
-local cfg = {}
+-- 1) muat config lama (jika ada)
+local Config = {}
 if isfile and isfile(FILE) then
-	local ok, data = pcall(readfile, FILE)
-	if ok then
-		local parse_ok, parsed = pcall(function()
-			return Http:JSONDecode(data)
-		end)
-		if parse_ok then cfg = parsed end
-	end
+  pcall(function() Config = HttpService:JSONDecode(readfile(FILE)) end)
 end
 
--- Hubungkan ke wrapper (semua perubahan otomatis ke-save)
-UI.FuncsV3:SetTable(cfg, function(t)
-	if writefile then
-		writefile(FILE, Http:JSONEncode(t))
-	end
+-- 2) fungsi simpan dipanggil wrapper (sudah di-debounce 0.5 detik)
+FuncsV3:SetTable(Config, function(cfg)
+  if writefile then writefile(FILE, HttpService:JSONEncode(cfg)) end
 end)
 
--- ─────────── BANGUN UI ───────────
-local Win = UI.Lib:CreateWindow({
-	"Auto Save Hub", "config tersimpan otomatis",
-	112, UDim2.fromOffset(460, 300),
-	true,  -- search tab
-	true   -- profil player
-})
+-- 3) UI
+local Window  = Library:CreateWindow({ Title = "King Akbar", Description = "Auto-Save" })
+local Tab     = Window:CreateTab({ "Main" })
+local Section = Tab:AddSection("Farming", true)
 
-local Tab = Win:CreateTab({ "Settings" })
-local Sec = Tab:AddSection("Tersimpan Otomatis", true)
-
--- Semua item di bawah ini otomatis ke-save kalau default-nya "Save"
-UI.FuncsV3:Toggle(Sec, "Auto Farm", "Farm otomatis", "Save", function(v)
-	print("Auto Farm:", v)
+FuncsV3:Toggle(Section, "Auto Farm", "Dimuat dari config", "Save", function(v)
+  print("Auto Farm:", v)
 end)
 
-UI.FuncsV3:Slider(Sec, "WalkSpeed", "Kecepatan", 16, 200, "Save", function(v)
-	print("WalkSpeed:", v)
+FuncsV3:Slider(Section, "WalkSpeed", "Min 16 – Max 200", 16, 200, "Save", function(v)
+  print("WalkSpeed:", v)
+end, 1) -- argumen terakhir = Increment (opsional)
+
+FuncsV3:Dropdown(Section, "Mode", "Pilih mode", false, { "Safe", "Fast", "Insane" }, "Save", function(v)
+  print("Mode:", v[1])
 end)
 
-UI.FuncsV3:Dropdown(Sec, "Mode", "Pilih mode", false,
-	{"Normal", "Turbo", "Extreme"}, "Save", function(v)
-	print("Mode:", v[1])
+FuncsV3:Textbox(Section, "Target", "Nama target", "Save", function(v)
+  print("Target:", v)
 end)
 
-UI.FuncsV3:Textbox(Sec, "Username", "Nama kamu", "Save", function(t)
-	print("Username:", t)
+FuncsV3:Button(Section, "Reset Config", "Hapus file config lalu tutup UI", function()
+  if delfile and isfile and isfile(FILE) then delfile(FILE) end
+  Library:SetNotification({ "Config", "•", "Config dihapus. Jalankan ulang script.", nil, 0.4, 4 })
+  Window:Destroy()
 end)
-
-UI.FuncsV3:Seperator(Sec, "Info")
-UI.FuncsV3:Paragraph(Sec, "Auto Save Aktif",
-	"Semua perubahan di atas otomatis tersimpan ke file " .. FILE)
-
--- ─────────── NOTIFIKASI ───────────
-UI.Lib:Notify({
-	"Auto Save", "Aktif",
-	"Konfigurasi akan otomatis dipulihkan saat execute ulang."
-})
