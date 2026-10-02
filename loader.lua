@@ -3,7 +3,7 @@
 ║    KING AKBAR UI — LOADER (SATU LINK, SEMUA FILE)    ║
 ║    github.com/Akbar025zzz/kingAkbarUi-Speedhub       ║
 ╚══════════════════════════════════════════════════════╝
-CARA PAKAI (cukup satu baris):
+PAKAI (cukup satu baris):
   local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/main/loader.lua"))()
 ]]
 
