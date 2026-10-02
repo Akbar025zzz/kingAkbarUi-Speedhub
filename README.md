@@ -1,179 +1,327 @@
-<div align="center">
+# 👑 King Akbar UI
 
-# ⚡ kingAkbarUi-Speedhub
+> Modern, customizable UI library untuk Roblox — dibuat untuk scripting hub & tool.
 
-**Library UI Roblox yang ringan, rapi, dan mobile-friendly.**
-Dibuat untuk executor modern (Delta, Wave, Solara, Fluxus, dll) — aman di-execute ulang tanpa UI dobel.
-
-![Version](https://img.shields.io/badge/version-1.5-blueviolet?style=for-the-badge)
-![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
-![Luau](https://img.shields.io/badge/bahasa-Luau-navy?style=for-the-badge)
-
-</div>
+![Lua](https://img.shields.io/badge/Lua-5.1-blue)
+![Roblox](https://img.shields.io/badge/Roblox-Exploit-red)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Version](https://img.shields.io/badge/version-1.5-blueviolet)
 
 ---
 
-## ✨ Fitur (v1.5 "Rapih Edition")
+## ✨ Fitur
 
-| Kategori | Detail |
+- 🎨 **Fully customizable** — ganti warna, font, ukuran, background, icon tanpa edit source
+- 🖼️ **Background image support**
+- 🪟 **Window auto-center** di semua device (PC & mobile)
+- 📦 **Komponen lengkap** — Button, Toggle, Slider, Input, Dropdown (multi + search), Panel
+- 🔔 **Notification system**
+- 🖱️ **Draggable** window & floating button
+- 📱 **Touch support** (mobile-friendly)
+- 🎯 **Anti-AFK** otomatis
+- 🎨 **10 preset tema** siap pakai
+
+---
+
+## 🚀 Instalasi
+
+### Cara 0 — Pakai `loader.lua` (paling praktis)
+
+```lua
+local KA = loadstring(game:HttpGet(
+  "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/loader.lua"))()
+local Library, Themes, FuncsV3 = KA.Library, KA.Themes, KA.Wrapper
+```
+
+Loader mencoba ulang 3x kalau koneksi gagal. Ganti sumber (branch/fork) dengan mengisi `getgenv().KingAkbarUI_Base = "https://.../main/"` sebelum memanggilnya.
+
+### Cara 1 — Pakai `loadstring` (recommended)
+
+```lua
+local Library = loadstring(game:HttpGet(
+  "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/init.lua"
+))()
+```
+
+### Cara 2 — Clone repo
+
+```bash
+git clone https://github.com/Akbar025zzz/kingAkbarUi-Speedhub.git
+```
+
+---
+
+## ⚡ Quick Start
+
+```lua
+local Library = loadstring(game:HttpGet(
+  "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/init.lua"
+))()
+
+-- Buat Window
+local Window = Library:CreateWindow({
+  Title = "My Hub",
+  Description = "v1.0",
+})
+
+-- Buat Tab
+local Tab = Window:CreateTab({ "Main", "rbxassetid://7734010488" })
+
+-- Buat Section
+local Section = Tab:AddSection("Farming", true)
+
+-- Tambah Toggle
+Section:AddToggle({
+  Title    = "Auto Farm",
+  Content  = "Aktifkan auto farming",
+  Default  = false,
+  Callback = function(state)
+    print("Auto Farm:", state)
+  end,
+})
+
+-- Tambah Button
+Section:AddButton({
+  Title    = "Reset Character",
+  Content  = "Klik untuk reset",
+  Callback = function()
+    Library:SetNotification({
+      Title       = "Success",
+      Description = "•",
+      Content     = "Character di-reset",
+    })
+  end,
+})
+```
+
+---
+
+## 🎨 Customization
+
+### Ganti Tema
+
+```lua
+Library:SetTheme({
+  Primary    = Color3.fromRGB(0, 170, 255),
+  Background = Color3.fromRGB(20, 20, 25),
+  Secondary  = Color3.fromRGB(35, 35, 45),
+  Text       = Color3.fromRGB(255, 255, 255),
+  SubText    = Color3.fromRGB(150, 150, 150),
+  Stroke     = Color3.fromRGB(60, 60, 70),
+})
+```
+
+### Pakai Preset Tema
+
+```lua
+local Themes = loadstring(game:HttpGet(
+  "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/themes.lua"
+))()
+
+Library:SetTheme(Themes.Neon)
+-- Tersedia: Dark, Neon, Cyberpunk, BloodRed, Gold,
+--           Purple, Ocean, Light, Matrix, Sunset
+```
+
+### Ganti Font
+
+```lua
+Library:SetFont({
+  Bold    = Enum.Font.FredokaOne,
+  Regular = Enum.Font.Gotham,
+})
+```
+
+### Ganti Background Image
+
+```lua
+local Cfg = Library:GetConfig()
+Cfg.Window.BackgroundImage        = "rbxassetid://7838809599"
+Cfg.Window.BackgroundTransparency = 0.5
+Cfg.Window.BackgroundTint         = Color3.fromRGB(0, 0, 0)
+Cfg.Window.BackgroundTintTrans    = 0.3
+```
+
+### Ganti Icon Floating Button
+
+```lua
+local Cfg = Library:GetConfig()
+Cfg.Assets.FloatingButton = "rbxassetid://91115084979317"
+```
+
+### Ganti Ukuran Window
+
+```lua
+local Window = Library:CreateWindow({
+  Title    = "My Hub",
+  TabWidth = 110,
+  SizeUi   = UDim2.fromOffset(500, 320),
+})
+```
+
+---
+
+## 📖 API Reference
+
+### 🔹 `Library:CreateWindow(config)`
+
+| Field | Type | Default | Deskripsi |
+|---|---|---|---|
+| `Title` | string | `""` | Judul window |
+| `Description` | string | `""` | Sub-judul |
+| `TabWidth` | number | `100` | Lebar panel tab |
+| `SizeUi` | UDim2 | `420x280` | Ukuran window |
+
+### 🔹 `Window:CreateTab({ Name, Icon })`
+
+| Param | Type | Deskripsi |
+|---|---|---|
+| `Name` | string | Nama tab |
+| `Icon` | string | `rbxassetid://...` |
+
+### 🔹 `Tab:AddSection(Title, OpenByDefault)`
+
+### 🔹 Item Components
+
+| Method | Field |
 |---|---|
-| **Layout** | Topbar 44px · Sidebar 112px · Section 34px · Item 40px · Scrollbar halus 3px |
-| **Kontrol** | Toggle iOS 40×20 · Slider (kotak nilai + track) · Dropdown 120×24 (+ search) · Input · Button · ColorPicker 48×22 · Keybind 64×22 · Panel expandable |
-| **Window** | Draggable, tombol minimize/close bulat, floating button, background image + tint, badge/pill |
-| **Sidebar** | Kolom search tab, profil player (avatar + nama disensor) |
-| **Themes** | 11 preset + `Themes.Apply()` + override otomatis untuk tema terang |
-| **Wrapper** | `FuncsV3`: shortcut item + **auto-save config** (`"Save"`) + ThemePicker |
-| **Stabilitas** | Cleanup otomatis saat execute ulang, semua callback dibungkus `pcall`, Anti-AFK bawaan |
+| `AddButton` | `Title, Content, Icon, Callback` |
+| `AddToggle` | `Title, Content, Default, Callback(state)` |
+| `AddSlider` | `Title, Content, Increment, Min, Max, Default, Callback(value)` |
+| `AddInput` | `Title, Content, Default, Callback(text)` |
+| `AddDropdown` | `Title, Content, Multi, Options, Default, Callback(value)` |
+| `AddPanel` | `Title, Content` → sub: `AddButton`, `AddToggle` |
+| `AddParagraph` | `Title, Content` |
+| `AddSeperator` | `Title` |
+| `AddLine` | – |
+
+### 🔹 `Library:SetNotification(config)`
+
+| Field | Type | Default |
+|---|---|---|
+| `Title` | string | `""` |
+| `Description` | string | `""` |
+| `Content` | string | `""` |
+| `Time` | number | `0.5` |
+| `Delay` | number | `5` |
+
+### 🔹 Fungsi Tambahan
+
+| Objek | Method |
+|---|---|
+| `Window` | `Show()`, `Hide()`, `Toggle()`, `Destroy()`, `SetToggleKey(KeyCode)`, `AddBadge(text)` |
+| Semua item | `SetTitle(text)`, `SetContent(text)`, `SetVisible(bool)`, `Destroy()` |
+| Toggle | `Set(bool)` |
+| Keybind | `Set(KeyCode \| "F", noCallback)` |
+| ColorPicker | `Set(Color3, noCallback)` |
+| Slider | `Set(value, fire)` — `fire = true` memanggil callback |
+| Input | `Set(text)` |
+| Dropdown | `Set(value)`, `Refresh(list, selected)`, `AddOption(name)`, `Clear()` |
+| `Library` | `Notify(config)` (alias `SetNotification`), `Destroy()` |
+
+**Opsi `CreateWindow`** (semua opsional, pakai format bernama): `Title`, `Description`, `TabWidth` (default 112), `SizeUi` (default otomatis sesuai layar), `Search`, `Profile`, `HideName`, `Logo`, `ToggleKey`.
+
+**Komponen baru:**
+```lua
+Section:AddColorPicker({ Title = "ESP Color", Default = Color3.fromRGB(168,120,255), Callback = function(c) end })
+Section:AddKeybind({ Title = "Fly", Default = "F", Callback = function(key) end, Changed = function(key) end })
+```
+
+> Argumen bisa dipakai dalam format array (`{ "Title", "Content", ... }`) **atau** bernama (`{ Title = "..." }`).
 
 ---
 
-## 🚀 Quick Start
+## 🔥 Wrapper (Auto-Save)
 
-### Cara 1 — Satu baris (disarankan, pakai `loader.lua`)
-
-```lua
-local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/main/loader.lua"))()
-
-local Win = UI:QuickHub({ Title = "My Hub", Desc = "v1.5", File = "my_hub.json", Theme = "Violet" })
-local Sec = Win:CreateTab({ "Main" }):AddSection("Features", true)
-
-UI.FuncsV3:Toggle(Sec, "Auto Farm", "Farm otomatis", "Save", function(v) print(v) end)
-UI.FuncsV3:ColorPicker(Sec, "ESP Color", "Warna ESP", "Save", function(c) print(c) end)
-```
-
-> `loader.lua` menarik `init.lua` + `themes.lua` + `wrapper.lua` sekaligus,
-> memuat config tersimpan, dan menerapkan theme otomatis.
-
-### Cara 2 — Manual (tanpa loader)
+Ada `wrapper.lua` yang bikin pemakaian lebih simpel + auto-save config.
 
 ```lua
-local Lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/main/init.lua"))()
+local FuncsV3 = loadstring(game:HttpGet(
+  "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/wrapper.lua"
+))()
 
-local Win = Lib:CreateWindow({ "King Akbar", "v1.5", 112, UDim2.fromOffset(460, 300) })
-local Tab = Win:CreateTab({ "Main", "rbxassetid://7734010488" })
-local Sec = Tab:AddSection("Farm", true)
+getgenv().MyConfig = getgenv().MyConfig or {}
+FuncsV3:SetTable(getgenv().MyConfig)
 
-Sec:AddToggle({ "Auto Farm", "Farm otomatis", false, function(v) print(v) end })
-Sec:AddSlider({ "WalkSpeed", "", 1, 16, 200, 16, function(v) print(v) end })
-
-Lib:SetNotification({ "King Akbar", "Loaded", "Script berhasil dimuat" })
+FuncsV3:Toggle(Section, "Auto Farm", "Deskripsi", "Save", function(v)
+  print(v)
+end)
 ```
+
+**Magic value `"Save"`** → otomatis load dari config & auto-save saat berubah.
+
+- Hanya `"Save"` yang memuat nilai tersimpan; `Default` eksplisit selalu dipakai apa adanya.
+- Kunci simpanan = **nama item**, jadi pakai nama yang unik di seluruh hub.
+- Penyimpanan di-debounce (0.5 detik) agar tidak menulis berulang-ulang.
+- Isi `storeFn` bila ingin menulis ke file:
+
+```lua
+FuncsV3:SetTable(getgenv().MyConfig, function(cfg)
+  writefile("MyHub.json", game:GetService("HttpService"):JSONEncode(cfg))
+end)
+```
+- `FuncsV3:Slider(Tab, Name, Content, Min, Max, Default, Callback, Increment)` — `Increment` opsional.
 
 ---
 
-## 📁 Struktur Repo
+## 📁 Contoh Lengkap
+
+Lihat folder [`examples/`](examples/) untuk referensi:
+
+- `basic.lua` — paling simpel
+- `with-save.lua` — pakai wrapper + save
+- `customize.lua` — ganti tema, font, background
+- `advanced.lua` — semua komponen
+- `modern_hub.lua` — tampilan hub modern (tema Violet, search, profil, badge)
+- `test.lua` — tes otomatis semua komponen (PASS/FAIL di console)
+
+---
+
+## 📦 Struktur Repo
 
 ```
 kingAkbarUi-Speedhub/
-├── init.lua        ← library utama (v1.5)
-├── wrapper.lua     ← FuncsV3: shortcut + auto-save
-├── themes.lua      ← 11 preset tema
-├── loader.lua      ← 1-click loader (opsional tapi disarankan)
+├── init.lua              ← library utama
+├── wrapper.lua           ← shortcut + auto-save
+├── themes.lua            ← 10 preset tema
+├── loader.lua            ← memuat init + themes + wrapper sekaligus
 ├── README.md
 ├── LICENSE
 └── examples/
-    ├── basic.lua       ← paling simpel
-    ├── with-save.lua   ← pakai wrapper + save config
-    ├── customize.lua   ← ganti tema, font, background
-    └── advanced.lua    ← semua komponen
+    ├── basic.lua
+    ├── with-save.lua
+    ├── customize.lua
+    ├── advanced.lua
+    ├── modern_hub.lua
+    └── test.lua
 ```
 
 ---
 
-## 📘 Dokumentasi API
+## 💡 Tips
 
-### Library (`Lib`)
-
-| Method | Keterangan |
-|---|---|
-| `Lib:CreateWindow(cfg)` | `cfg` array/named: `Title, Description, TabWidth, SizeUi, Search, Profile, Logo, HideName` |
-| `Lib:SetNotification(cfg)` | `{ Title, Description, Content, _, Time, Delay }` (alias: `Lib:Notify`) |
-| `Lib:SetTheme(t)` / `Lib:SetFont(f)` | **Wajib sebelum** `CreateWindow` agar terpakai penuh |
-| `Lib:GetConfig()` | Akses `CONFIG` (Theme, Window, Item, Behavior, Assets) |
-| `Lib:Destroy()` | Bersihkan semua GUI + koneksi |
-
-### Window (`Win`)
-
-`CreateTab({Name, Icon})` · `AddBadge(text)` · `Show()` · `Hide()` · `Toggle()` · `Destroy()`
-
-### Section & Items (`Tab:AddSection(judul, terbuka)`)
-
-| Item | Argumen (array / named) |
-|---|---|
-| `AddToggle` | Title, Content, Default, Callback |
-| `AddSlider` | Title, Content, Increment, Min, Max, Default, Callback |
-| `AddDropdown` | Title, Content, Multi, Options, Default, Callback |
-| `AddInput` | Title, Content, Default, Callback |
-| `AddButton` | Title, Content, Icon, Callback |
-| `AddColorPicker` | Title, Content, Default(Color3), Callback |
-| `AddKeybind` | Title, Content, Default(KeyCode), Callback(tekan), OnChange(ganti bind) |
-| `AddPanel` | Title, Content → punya `:AddButton(cfg)`, `:AddToggle(cfg)` |
-| `AddParagraph` / `AddSeperator` / `AddLine` | — |
-
-Semua item punya: `:Set()`, `:SetTitle()`, `:SetContent()`, `:SetVisible()`, `:Destroy()`.
-Dropdown tambahan: `:AddOption()`, `:Refresh(list, select)`, `:Clear()`.
-
-### Wrapper (`FuncsV3`)
-
-```lua
-local FuncsV3 = loadstring(game:HttpGet(".../wrapper.lua"))()
-FuncsV3:SetTable(getgenv().MyConfig, function(cfg) writefile("cfg.json", Http:JSONEncode(cfg)) end)
-
-FuncsV3:Toggle(Sec, "Auto Farm", "", "Save", function(v) end)   -- "Save" = load & simpan otomatis
-FuncsV3:Slider(Sec, "WalkSpeed", "", 16, 200, "Save", function(v) end)
-FuncsV3:Dropdown(Sec, "Mode", "", false, {"A","B"}, "Save", function(v) end)
-FuncsV3:Textbox(Sec, "Nama", "", "Save", function(t) end)
-FuncsV3:ColorPicker(Sec, "ESP Color", "", "Save", function(c) end)  -- tersimpan sebagai hex
-FuncsV3:Keybind(Sec, "Fly Hotkey", "", "Save", function() end)      -- tersimpan sebagai nama key
-FuncsV3:ThemePicker(Sec, Lib, Themes, function(name) end)           -- dropdown ganti tema
-```
-
-### Themes (`themes.lua`)
-
-`Dark` · `Neon` · `Cyberpunk` · `BloodRed` · `Gold` · `Purple` · `Ocean` · `Light` · `Matrix` · `Sunset` · `Violet`
-
-```lua
-local Themes = loadstring(game:HttpGet(".../themes.lua"))()
-Themes.Apply(Lib, "Neon")            -- sebelum CreateWindow
-Themes.Apply(Lib, FuncsV3:GetSavedTheme())  -- kombinasi dengan auto-save
-```
+- **Tema, font, background, dan icon floating button harus diatur SEBELUM `CreateWindow`** — elemen yang sudah dibuat tidak ikut berubah
+- Tema **Light**: matikan background image (`Library:GetConfig().Window.BackgroundImage = ""`) supaya tidak tertutup tint gelap
+- Menjalankan script dua kali aman: UI lama otomatis dibersihkan
+- **Background image** lebih bagus pakai resolusi **1280x720** ke atas
+- **Icon floating button** sebaiknya PNG transparan ukuran **128x128**
+- **Font custom** bisa pakai `rbxasset://fonts/...` atau asset ID sendiri
+- **Anti-AFK** bisa dimatikan via `Library:GetConfig().Behavior.AntiAFK = false`
 
 ---
 
-## 📚 Contoh
+## 🐛 Bug Report
 
-Lihat folder [`examples/`](examples/):
-
-| File | Isi |
-|---|---|
-| `basic.lua` | Window + tab + section minimal |
-| `with-save.lua` | Wrapper `FuncsV3` + auto-save config ke file |
-| `customize.lua` | Ganti tema, font, dan background via `GetConfig()` |
-| `advanced.lua` | Semua komponen: dropdown, colorpicker, keybind, panel |
+Buka [issue](https://github.com/Akbar025zzz/kingAkbarUi-Speedhub/issues) baru.
 
 ---
 
-## ❓ FAQ
+## 📜 License
 
-- **UI dobel saat execute ulang?** Sudah otomatis cleanup. Kalau masih, panggil `Lib:Destroy()` dulu.
-- **Theme tidak terpakai?** `SetTheme` / `Themes.Apply` wajib dipanggil **sebelum** `CreateWindow`.
-- **Theme Light terlihat gelap?** Sudah ditangani: `Themes.Apply` otomatis mematikan background image untuk tema terang.
-- **Executor tanpa `writefile`?** Auto-save otomatis dilewati dengan aman (pcall), script tetap jalan.
-- **Callback error?** Semua callback dibungkus `pcall`; pesan error muncul di console sebagai `[KingAkbarUI]`.
+MIT — bebas dipakai, diubah, dan dibagikan. Lihat [LICENSE](LICENSE).
 
 ---
 
-## 🤝 Kontribusi
+## 🙏 Credit
 
-Pull request terbuka! Lihat gaya kode di `init.lua` (indent tab, callback via `SafeCall`).
-Laporan bug: buka Issue sertakan executor, game, dan screenshot error.
-
-## 📜 Lisensi
-
-[MIT](LICENSE) — bebas dipakai & dimodifikasi, tetap sertakan kredit.
-
----
-
-<div align="center">
-Dibuat dengan ❤ oleh <b>Akbar025zzz</b> — <i>King Akbar UI</i>
-</div>
+Made with ❤️ by **King Akbar**
