@@ -300,7 +300,7 @@ local function CreateFloatingButton()
     BackgroundTransparency = 0.4,
     BorderSizePixel = 0,
     AutoButtonColor = false,
-    Position = UDim2.new(0.85, 0, 0.05, 0),
+    Position = UDim2.new(0, 15, 0.05, 0),
     Size = UDim2.fromOffset(45, 45),
     Image = CONFIG.Assets.FloatingButton,
     Visible = false,
