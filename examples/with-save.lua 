@@ -1,0 +1,76 @@
+--[[
+┌────────────────────────────────────────────────────────┐
+│  CONTOH 02: WITH AUTO-SAVE                             │
+│  Semua settingan user otomatis tersimpan ke file JSON. │
+│  Default "Save" = load dari file + simpan tiap kali    │
+│  berubah.                                              │
+└────────────────────────────────────────────────────────┘
+]]
+
+local Http = game:GetService("HttpService")
+
+-- Load library
+local UI = loadstring(game:HttpGet(
+	"https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/main/loader.lua"
+))()
+
+-- ─────────── SETUP AUTO-SAVE ───────────
+local FILE = "myhub_config.json"
+
+-- Muat config tersimpan (kalau ada)
+local cfg = {}
+if isfile and isfile(FILE) then
+	local ok, data = pcall(readfile, FILE)
+	if ok then
+		local parse_ok, parsed = pcall(function()
+			return Http:JSONDecode(data)
+		end)
+		if parse_ok then cfg = parsed end
+	end
+end
+
+-- Hubungkan ke wrapper (semua perubahan otomatis ke-save)
+UI.FuncsV3:SetTable(cfg, function(t)
+	if writefile then
+		writefile(FILE, Http:JSONEncode(t))
+	end
+end)
+
+-- ─────────── BANGUN UI ───────────
+local Win = UI.Lib:CreateWindow({
+	"Auto Save Hub", "config tersimpan otomatis",
+	112, UDim2.fromOffset(460, 300),
+	true,  -- search tab
+	true   -- profil player
+})
+
+local Tab = Win:CreateTab({ "Settings" })
+local Sec = Tab:AddSection("Tersimpan Otomatis", true)
+
+-- Semua item di bawah ini otomatis ke-save kalau default-nya "Save"
+UI.FuncsV3:Toggle(Sec, "Auto Farm", "Farm otomatis", "Save", function(v)
+	print("Auto Farm:", v)
+end)
+
+UI.FuncsV3:Slider(Sec, "WalkSpeed", "Kecepatan", 16, 200, "Save", function(v)
+	print("WalkSpeed:", v)
+end)
+
+UI.FuncsV3:Dropdown(Sec, "Mode", "Pilih mode", false,
+	{"Normal", "Turbo", "Extreme"}, "Save", function(v)
+	print("Mode:", v[1])
+end)
+
+UI.FuncsV3:Textbox(Sec, "Username", "Nama kamu", "Save", function(t)
+	print("Username:", t)
+end)
+
+UI.FuncsV3:Seperator(Sec, "Info")
+UI.FuncsV3:Paragraph(Sec, "Auto Save Aktif",
+	"Semua perubahan di atas otomatis tersimpan ke file " .. FILE)
+
+-- ─────────── NOTIFIKASI ───────────
+UI.Lib:Notify({
+	"Auto Save", "Aktif",
+	"Konfigurasi akan otomatis dipulihkan saat execute ulang."
+})
