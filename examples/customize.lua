@@ -1,98 +1,54 @@
 --[[
-┌────────────────────────────────────────────────────────┐
-│  CONTOH 03: CUSTOMIZE TAMPILAN                         │
-│  Ganti tema, font, background, ukuran window, dan      │
-│  perilaku library secara manual via GetConfig().       │
-└────────────────────────────────────────────────────────┘
+  CONTOH KUSTOMISASI
+  Semua pengaturan tema/font/config HARUS dilakukan SEBELUM CreateWindow.
 ]]
 
--- Load library + themes (manual, tanpa loader)
-local Lib    = loadstring(game:HttpGet(
-	"https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/main/init.lua"
-))()
-local Themes = loadstring(game:HttpGet(
-	"https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/main/themes.lua"
-))()
+local KA = loadstring(game:HttpGet("https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/loader.lua"))()
+local Library, Themes = KA.Library, KA.Themes
 
--- ─────────── 1. GANTI TEMA (WAJIB sebelum CreateWindow) ───────────
--- Bisa pakai preset:
-Themes.Apply(Lib, "Violet")
+-- Tema preset: Dark, Neon, Cyberpunk, BloodRed, Gold, Purple, Ocean, Light, Matrix, Sunset, Violet
+Library:SetTheme(Themes.Violet)
 
--- Atau custom manual:
--- Lib:SetTheme({
---     Primary   = Color3.fromRGB(255, 100, 200),
---     Background = Color3.fromRGB(20, 10, 30),
--- })
+-- Tema buatan sendiri (sebagian key saja juga boleh)
+-- Library:SetTheme({ Primary = Color3.fromRGB(255, 120, 0), Background = Color3.fromRGB(14, 12, 10) })
 
--- ─────────── 2. GANTI FONT ───────────
-Lib:SetFont({
-	Bold    = Enum.Font.GothamBlack,
-	Regular = Enum.Font.Gotham,
+-- Font
+Library:SetFont({ Bold = Enum.Font.GothamBold, Regular = Enum.Font.Gotham })
+
+-- Config lanjutan
+local Cfg = Library:GetConfig()
+Cfg.Window.CornerRadius    = 12                      -- sudut window
+Cfg.Window.TabWidth        = 120                     -- lebar sidebar (default 112)
+Cfg.Window.TopbarHeight    = 44
+Cfg.Window.BackgroundImage = ""                      -- kosongkan = tanpa gambar latar
+-- Cfg.Window.BackgroundImage = "rbxassetid://ID"    -- atau pakai gambar sendiri
+Cfg.Assets.FloatingButton  = "rbxassetid://7734010488" -- ikon tombol saat window di-minimize
+Cfg.Behavior.AntiAFK       = true                    -- bisa diubah kapan saja
+Cfg.Notification.Duration  = 4
+
+local Window = Library:CreateWindow({
+  Title     = "Custom UI",
+  Description = "| Violet",
+  Search    = true,
+  Profile   = true,
+  HideName  = true,                       -- nama disensor: abc***
+  Logo      = "rbxassetid://7734010488",
+  ToggleKey = Enum.KeyCode.RightControl,  -- hotkey buka/tutup
+  -- SizeUi = UDim2.fromOffset(520, 300), -- kosongkan = otomatis sesuai layar
 })
 
--- ─────────── 3. GANTI CONFIG WINDOW ───────────
-local cfg = Lib:GetConfig()
-cfg.Window.Size = UDim2.fromOffset(500, 350)            -- ukuran window
-cfg.Window.CornerRadius = 12                            -- sudut lebih bulat
-cfg.Window.BackgroundImage = "rbxassetid://110409843085547" -- gambar latar
-cfg.Window.BackgroundTransparency = 0.4                 -- lebih buram
-cfg.Window.BackgroundTint = Color3.fromRGB(80, 40, 120) -- tint ungu
-cfg.Window.BackgroundTintTrans = 0.5
+Window:AddBadge("v1.0.0")
+Window:AddBadge("Executor: " .. tostring((identifyexecutor and (identifyexecutor())) or "Unknown"))
 
--- ─────────── 4. MATIKAN ANTI-AFK (kalau mau) ───────────
-cfg.Behavior.AntiAFK = false
+local Tab = Window:CreateTab({ "Tema" })
+local Section = Tab:AddSection("Ganti Tema (butuh jalankan ulang)", true)
 
--- ─────────── 5. GANTI ASSET (opsional) ───────────
-cfg.Assets.FloatingButton = "rbxassetid://91115084979317"
-
--- ─────────── 6. BARU BIKIN WINDOW ───────────
-local Win = Lib:CreateWindow({
-	Title       = "Custom Hub",
-	Description = "full kustomisasi",
-	TabWidth    = 120,
-	SizeUi      = UDim2.fromOffset(500, 350),
-	Search      = true,
-	Profile     = true,
-	Logo        = "rbxassetid://7734010488",
-	HideName    = false,  -- tampilkan nama lengkap (jangan sensor)
+Section:AddParagraph({
+  Title   = "Catatan",
+  Content = "Tema diterapkan saat elemen dibuat. Untuk berganti tema, jalankan ulang script dengan tema lain.",
 })
 
--- Tambah badge
-Win:AddBadge("Custom")
-Win:AddBadge("v1.5")
-
--- Tab demo
-local Tab = Win:CreateTab({ "Demo" })
-local Sec = Tab:AddSection("Hasil Kustomisasi", true)
-
-Sec:AddParagraph({
-	"Tampilan dikustom",
-	"Tema Violet · Font GothamBlack · Corner 12px · Background custom"
-})
-Sec:AddToggle({ "Test Toggle", "Coba klik", false, function(v) end })
-Sec:AddSlider({ "Test Slider", "", 1, 0, 100, 50, function(v) end })
-
--- Tab tema (ganti tema live dengan rebuild window)
-local ThemeTab = Win:CreateTab({ "Ganti Tema" })
-local TSec = ThemeTab:AddSection("Pilih Tema", true)
-TSec:AddDropdown({
-	Title   = "Preset Tema",
-	Content = "Ganti tema & rebuild window",
-	Multi   = false,
-	Options = Themes.Names(),
-	Default = { "Violet" },
-	Callback = function(v)
-		local name = v[1]
-		if name then
-			if getgenv then getgenv().DemoTheme = name end
-			Win:Destroy()
-			-- Rebuild dengan tema baru (script execute ulang)
-			Themes.Apply(Lib, name)
-			-- Di real script, kamu load ulang script-nya.
-			-- Di sini kita cukup kasih notif
-			Lib:Notify({ "Theme", "Diubah", "'"..name.."' aktif di execute berikutnya." })
-		end
-	end,
-})
-
-Lib:Notify({ "Custom", "Loaded", "Semua kustomisasi diterapkan!" })
+Section:AddColorPicker({ Title = "Contoh Warna", Default = Color3.fromRGB(168, 120, 255),
+  Callback = function(c) print("Warna:", c) end })
+Section:AddKeybind({ Title = "Contoh Hotkey", Default = "G",
+  Callback = function(k) print("Hotkey:", k.Name) end })
