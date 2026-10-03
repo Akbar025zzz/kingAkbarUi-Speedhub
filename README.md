@@ -557,7 +557,6 @@ Lihat folder [`examples/`](examples/):
 | `with-save.lua` | Wrapper + auto-save + versioning |
 | `customize.lua` | Runtime theme switcher, font, background |
 | `advanced.lua` | **Semua** komponen + API demo |
-| `modern_hub.lua` | Tampilan hub modern (tema Violet, search, profil) |
 
 ---
 
@@ -577,8 +576,7 @@ kingAkbarUi-Speedhub/
     ├── basic.lua
     ├── with-save.lua
     ├── customize.lua
-    ├── advanced.lua
-    └── modern_hub.lua
+    └── advanced.lua
 ```
 
 ---
