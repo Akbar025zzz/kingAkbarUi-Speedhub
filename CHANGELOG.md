@@ -1,19 +1,11 @@
 # Changelog
 
-## v2.0
+## v1.6
 
-| Kategori | Perubahan |
-| --- | --- |
-| 🎹 Keybind System | Komponen keybind baru + hotkey toggle UI (default `RightShift`) |
-| 🎨 ColorPicker | SV picker + hue bar + preset swatch |
-| ⚠️ Dialog System | Confirm dialog untuk aksi destruktif |
-| 💬 Tooltip | Semua komponen support tooltip |
-| 🎭 Theme Runtime | Ganti tema setelah `CreateWindow`, real-time |
-| 💾 Save Built-in | `EnableSave()` + `SaveKey`, tanpa wrapper |
-| 📊 Progress Bar | Notifikasi punya progress bar countdown |
-| 🔊 Sound Effects | Feedback audio (opsional, default OFF) |
-| 🎚️ Slider Upgrade | Fill bar + drag track + input manual |
-| 📬 Notif Queue | Maks 5 notif bersamaan, sisanya antri |
-| 🐛 Bug Fixes | Toggle callback saat init, notif overflow, memory leak |
+- ➕ **TabBox**: `Tab:AddTabBox({ Tabs = {...}, Default = "...", Swipe = false })`
+  - API standar: `SetValue`, `GetValue`, `SetVisible`, `Destroy`, `OnChanged` (registry callback)
+  - Page punya semua komponen Section (`AddToggle`, `AddSlider`, dst.)
+  - Opsi `Swipe` untuk pindah halaman dengan geser di HP
+- 🔧 Internal: blok item diekstrak ke `BuildItems(container)` supaya dipakai Section dan TabBox. API lama tidak berubah.
 
-Lainnya: Viewport Clamp, 27 tema, Wrapper v2 (bug fix + file storage + versioning).
+Riwayat sebelum v1.6 belum didokumentasikan.
