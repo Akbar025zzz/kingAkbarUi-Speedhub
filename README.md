@@ -2,14 +2,15 @@
 
 > UI library Roblox (Luau) bergaya dark modern, untuk script hub dan tool. Mobile friendly.
 
-**Versi:** 1.6 · **Lisensi:** MIT
+**Versi:** 1.7 · **Lisensi:** MIT
 
 ## ✨ Fitur
 
 - Window auto-fit layar (PC & HP), draggable, tombol floating, hotkey tampil/sembunyi
-- Hierarki: Window → Tab → Section / TabBox → Komponen
+- Hierarki: Window → Tab → Section / GroupBox / TabBox → Komponen
 - Komponen: Button, Toggle, Slider, Input, Dropdown (multi), Keybind, ColorPicker, Panel, Paragraph, Seperator, Line
-- **TabBox** (baru v1.6): satu kotak dengan beberapa halaman, bisa swipe di HP
+- **TabBox** (v1.6): satu kotak dengan beberapa halaman, bisa swipe di HP
+- **GroupBox** (v1.7): kotak berjudul, opsional collapsible dan tinggi maksimum dengan scroll sendiri
 - Notifikasi, badge di topbar, search tab, profil user
 - Tema lewat `SetTheme`, font lewat `SetFont`, background image, Anti-AFK (bisa dimatikan)
 - Aman dijalankan ulang: UI lama otomatis dibersihkan
@@ -25,7 +26,7 @@ local Lib = loadstring(game:HttpGet(
 ## ⚡ Quick Start
 
 ```lua
-local Win = Lib:CreateWindow({ "King Akbar", "v1.6", 100, UDim2.fromOffset(420, 280) })
+local Win = Lib:CreateWindow({ "King Akbar", "v1.7", 100, UDim2.fromOffset(420, 280) })
 local Tab = Win:CreateTab({ "Main", "rbxassetid://7734010488" })
 local Sec = Tab:AddSection("Farm", true)
 
@@ -42,6 +43,7 @@ Semua komponen menerima format **array** (`{ "Judul", "Isi", ... }`) atau **name
 | Dokumen | Isi |
 | --- | --- |
 | [docs/api.md](docs/api.md) | Semua method: Library, Window, Tab, komponen, notifikasi |
+| [docs/groupbox.md](docs/groupbox.md) | GroupBox (vs Section) |
 | [docs/tabbox.md](docs/tabbox.md) | TabBox dan Page |
 | [docs/themes.md](docs/themes.md) | Warna, font, background, konfigurasi |
 | [CHANGELOG.md](CHANGELOG.md) | Riwayat perubahan |
@@ -51,15 +53,17 @@ Semua komponen menerima format **array** (`{ "Judul", "Isi", ... }`) atau **name
 
 ```
 kingAkbarUi-Speedhub/
-├── init.lua          ← library utama (v1.6)
+├── init.lua          ← library utama (v1.7)
 ├── wrapper.lua       ← wrapper + auto-save
 ├── themes.lua        ← preset tema
 ├── docs/
 │   ├── api.md
+│   ├── groupbox.md
 │   ├── tabbox.md
 │   └── themes.md
 ├── examples/
 │   ├── basic.lua
+│   ├── groupbox.lua
 │   └── tabbox.lua
 ├── CHANGELOG.md
 ├── README.md
