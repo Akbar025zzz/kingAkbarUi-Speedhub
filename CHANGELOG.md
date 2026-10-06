@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.7
+
+- ➕ **GroupBox**: `Tab:AddGroupBox({ Title, Collapsible = false, Open = true, MaxHeight = nil })`
+  - API standar: `SetValue(open)`, `GetValue`, `SetVisible`, `Destroy`, `OnChanged`, plus `Toggle`, `SetTitle`
+  - Punya semua komponen Section (`AddToggle`, `AddSlider`, dst.)
+  - `MaxHeight` mengaktifkan scroll sendiri (opsional; tanpa itu tidak ada scroll bersarang)
+- 🔧 Internal: helper bersama `BindOwned`, `AddChanged`, `FireChanged` untuk komponen baru. `TabBox` dipindah ke helper ini, perilaku sama.
+- `Section` dan `AddSection` tidak berubah.
+
 ## v1.6
 
 - ➕ **TabBox**: `Tab:AddTabBox({ Tabs = {...}, Default = "...", Swipe = false })`
