@@ -86,6 +86,71 @@ Selesai. Tekan **RightShift** untuk menampilkan/menyembunyikan window.
 > - **Berurutan:** `{ "Auto Farm", "Farm otomatis", false, callback }`
 > - **Bernama:** `{ Title = "Auto Farm", Content = "Farm otomatis", Default = false, Callback = callback }`
 
+### 📋 Script lengkap (siap copy-paste)
+
+Satu script utuh yang bisa langsung dijalankan di executor:
+
+```lua
+local Lib = loadstring(game:HttpGet(
+  "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/init.lua"
+))()
+
+-- Window
+local Win = Lib:CreateWindow({
+  Title       = "King Akbar",
+  Description = "v1.7",
+  SizeUi      = UDim2.fromOffset(420, 280),
+  Search      = true,                      -- kolom cari tab
+  Profile     = true,                      -- avatar + nama pemain
+  ToggleKey   = Enum.KeyCode.RightShift,   -- tampil/sembunyi
+})
+
+-- Tab
+local Tab = Win:CreateTab({ "Main", "rbxassetid://7734010488" })
+
+-- Section: komponen dasar
+local Sec = Tab:AddSection("Farm", true)
+
+Sec:AddToggle({ "Auto Farm", "Farm otomatis", false, function(v)
+  print("Auto Farm:", v)
+end })
+
+Sec:AddSlider({ "WalkSpeed", "", 1, 16, 200, 16, function(v)
+  print("WalkSpeed:", v)
+end })
+
+Sec:AddDropdown({ "Mode", "", false, { "Cepat", "Aman" }, { "Aman" }, function(v)
+  print("Mode:", v[1])
+end })
+
+Sec:AddInput({ "Nama Target", "", "", function(teks)
+  print("Target:", teks)
+end })
+
+Sec:AddKeybind({ "Hotkey Farm", "", "F", function()
+  print("Hotkey ditekan")
+end })
+
+Sec:AddButton({ Title = "Tes Notifikasi", Callback = function()
+  Lib:SetNotification({ "King Akbar", "Halo", "Tombol berhasil ditekan" })
+end })
+
+-- GroupBox: kotak berjudul yang bisa dilipat
+local Box = Tab:AddGroupBox({ Title = "Pengaturan", Collapsible = true, Open = true })
+Box:AddColorPicker({ "Warna", "", Color3.fromRGB(0, 170, 255), function(c)
+  print("Warna:", c)
+end })
+
+-- TabBox: satu kotak, beberapa halaman
+local TB = Tab:AddTabBox({ Tabs = { "Info", "Lainnya" }, Default = "Info" })
+TB:GetTab("Info"):AddParagraph({ "Tentang", "Dibuat dengan King Akbar UI" })
+TB:GetTab("Lainnya"):AddToggle({ "Opsi Lain", "", false, function(v) print(v) end })
+TB:OnChanged(function(nama) print("Halaman:", nama) end)
+
+-- Notifikasi
+Lib:SetNotification({ "King Akbar", "Loaded", "Tekan RightShift untuk tampil/sembunyi" })
+```
+
 ---
 
 ## 4. 🧭 Memahami Susunan UI
@@ -195,7 +260,7 @@ Daftar semua warna, background image, dan opsi lain: [docs/themes.md](docs/theme
 ```
 kingAkbarUi-Speedhub/
 ├── init.lua          ← library utama
-├── wrapper.lua       ← wrapper + auto-save
+├── wrapper.lua       ← wrapper opsional
 ├── themes.lua        ← preset tema
 ├── docs/             ← dokumentasi
 ├── examples/         ← contoh script
