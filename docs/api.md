@@ -1,4 +1,4 @@
-# API Reference (v1.6)
+# API Reference (v1.7)
 
 Semua config menerima format **array** (urutan di tabel) atau **named** (nama field).
 
@@ -42,9 +42,10 @@ Semua config menerima format **array** (urutan di tabel) atau **named** (nama fi
 | Method | Deskripsi |
 | --- | --- |
 | `AddSection(judul, terbukaDefault)` | Section collapsible, return `Section` |
+| `AddGroupBox(config)` | Kotak berjudul, lihat [groupbox.md](groupbox.md) |
 | `AddTabBox(config)` | Kotak multi-halaman, lihat [tabbox.md](tabbox.md) |
 
-## Komponen (Section dan Page TabBox)
+## Komponen (Section, GroupBox, dan Page TabBox)
 
 Method umum semua komponen: `SetTitle(text)`, `SetContent(text)`, `SetVisible(bool)`, `Destroy()`.
 
@@ -65,7 +66,7 @@ Method umum semua komponen: `SetTitle(text)`, `SetContent(text)`, `SetVisible(bo
 Catatan:
 - Keybind: `Callback` dipanggil saat hotkey **ditekan**, `Changed` saat key **diganti**.
 - Dropdown `Default` berupa tabel (`{ "A" }`); callback menerima tabel pilihan.
-- Callback komponen lama masih **satu slot**. `OnChanged` dengan registry baru ada di TabBox.
+- Callback komponen lama masih **satu slot**. `OnChanged` dengan registry baru ada di TabBox dan GroupBox.
 
 ## SetNotification(config)
 
