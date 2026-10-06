@@ -1,115 +1,75 @@
 # 👑 King Akbar UI
 
-> Modern, customizable UI library untuk Roblox — dibuat untuk scripting hub & tool.
+> UI library Roblox (Luau) bergaya dark modern, untuk script hub dan tool. Mobile friendly.
 
-![Version](https://img.shields.io/badge/Version-2.0-blue) ![License](https://img.shields.io/badge/License-MIT-green) ![Language](https://img.shields.io/badge/Language-Lua-red)
+**Versi:** 1.6 · **Lisensi:** MIT
 
 ## ✨ Fitur
 
-- 🎨 Fully customizable — tema, font, ukuran, background, icon
-- 🪟 Window auto-center di PC & mobile, draggable, touch support
-- 📦 12 komponen — Button, Toggle, Slider, Input, Dropdown, Keybind, ColorPicker, Panel, Paragraph, Seperator, Line, Dialog
-- 🔔 Notifikasi + progress bar + queue
-- 🎨 27 preset tema + generate tema dari 1 warna + ganti tema runtime
-- 💾 Save config built-in (`EnableSave` + `SaveKey`) atau lewat wrapper
-- 🎹 Keybind & hotkey toggle UI, 💬 tooltip, 🔊 sound effects (opsional)
-- 🎯 Anti-AFK otomatis (bisa dimatikan)
+- Window auto-fit layar (PC & HP), draggable, tombol floating, hotkey tampil/sembunyi
+- Hierarki: Window → Tab → Section / TabBox → Komponen
+- Komponen: Button, Toggle, Slider, Input, Dropdown (multi), Keybind, ColorPicker, Panel, Paragraph, Seperator, Line
+- **TabBox** (baru v1.6): satu kotak dengan beberapa halaman, bisa swipe di HP
+- Notifikasi, badge di topbar, search tab, profil user
+- Tema lewat `SetTheme`, font lewat `SetFont`, background image, Anti-AFK (bisa dimatikan)
+- Aman dijalankan ulang: UI lama otomatis dibersihkan
 
 ## 🚀 Instalasi
 
 ```lua
-local Library = loadstring(game:HttpGet(
+local Lib = loadstring(game:HttpGet(
   "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/init.lua"
 ))()
-```
-
-Atau clone repo:
-
-```bash
-git clone https://github.com/Akbar025zzz/kingAkbarUi-Speedhub.git
 ```
 
 ## ⚡ Quick Start
 
 ```lua
-local Library = loadstring(game:HttpGet(
-  "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/init.lua"
-))()
+local Win = Lib:CreateWindow({ "King Akbar", "v1.6", 100, UDim2.fromOffset(420, 280) })
+local Tab = Win:CreateTab({ "Main", "rbxassetid://7734010488" })
+local Sec = Tab:AddSection("Farm", true)
 
-Library:EnableSave("MyHub.json")
+Sec:AddToggle({ "Auto Farm", "Farm otomatis", false, function(v) print(v) end })
+Sec:AddSlider({ "WalkSpeed", "", 1, 16, 200, 16, function(v) print(v) end })
 
-local Window = Library:CreateWindow({
-  Title       = "My Hub",
-  Description = "v2.0",
-  ToggleKey   = Enum.KeyCode.RightShift,
-  Search      = true,
-  Profile     = true,
-})
-
-local Tab     = Window:CreateTab({ "Main", "rbxassetid://7734010488" })
-local Section = Tab:AddSection("Farming", true)
-
-Section:AddToggle({
-  Title    = "Auto Farm",
-  Content  = "Aktifkan auto farming",
-  SaveKey  = "auto_farm",
-  Default  = false,
-  Callback = function(state) print("Auto Farm:", state) end,
-})
-
-Library:SetNotification({
-  Title = "Success", Description = "Loaded",
-  Content = "Tekan [RightShift] untuk toggle UI",
-})
+Lib:SetNotification({ "King Akbar", "Loaded", "Script berhasil dimuat" })
 ```
+
+Semua komponen menerima format **array** (`{ "Judul", "Isi", ... }`) atau **named** (`{ Title = "Judul", ... }`).
 
 ## 📚 Dokumentasi
 
 | Dokumen | Isi |
 | --- | --- |
-| [docs/api.md](docs/api.md) | API Reference: Library, Window, komponen, notifikasi, dialog |
-| [docs/themes.md](docs/themes.md) | Preset tema, runtime switcher, generate tema, kustomisasi |
-| [docs/wrapper.md](docs/wrapper.md) | Wrapper FuncsV3 + auto-save |
-| [docs/migration.md](docs/migration.md) | Migrasi dari v1.4 ke v2.0 |
+| [docs/api.md](docs/api.md) | Semua method: Library, Window, Tab, komponen, notifikasi |
+| [docs/tabbox.md](docs/tabbox.md) | TabBox dan Page |
+| [docs/themes.md](docs/themes.md) | Warna, font, background, konfigurasi |
 | [CHANGELOG.md](CHANGELOG.md) | Riwayat perubahan |
-| [examples/](examples) | `basic`, `with-save`, `customize`, `advanced` |
+| [examples/](examples) | Contoh pemakaian |
 
 ## 📦 Struktur Repo
 
 ```
 kingAkbarUi-Speedhub/
-├── init.lua          ← library utama (v2.0)
-├── wrapper.lua       ← shortcut + auto-save
-├── themes.lua        ← 27 preset tema
+├── init.lua          ← library utama (v1.6)
+├── wrapper.lua       ← wrapper + auto-save
+├── themes.lua        ← preset tema
 ├── docs/
 │   ├── api.md
-│   ├── themes.md
-│   ├── wrapper.md
-│   └── migration.md
+│   ├── tabbox.md
+│   └── themes.md
 ├── examples/
 │   ├── basic.lua
-│   ├── with-save.lua
-│   ├── customize.lua
-│   └── advanced.lua
+│   └── tabbox.lua
 ├── CHANGELOG.md
 ├── README.md
 └── LICENSE
 ```
 
-## 💡 Tips
-
-- Anti-AFK bisa dimatikan: `Library:GetConfig().Behavior.AntiAFK = false`
-- Menjalankan script dua kali aman — UI lama otomatis dibersihkan
-- Background image lebih bagus resolusi 1280x720 ke atas
-- Icon floating button sebaiknya PNG transparan 128x128
-- `SaveKey` di library vs wrapper — pilih satu gaya per script, jangan campur
-
 ## 🐛 Bug Report
 
 Buka [issue](https://github.com/Akbar025zzz/kingAkbarUi-Speedhub/issues) dengan: nama executor & versi, langkah reproduksi, error message / screenshot.
 
-## 📜 License
+## 📜 Lisensi
 
-MIT — bebas dipakai, diubah, dan dibagikan. Lihat [LICENSE](LICENSE).
-
-Made with ❤️ by **King Akbar**
+MIT. Made with ❤️ by **King Akbar**
