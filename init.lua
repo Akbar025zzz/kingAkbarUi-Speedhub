@@ -1,6 +1,6 @@
 --[[
   ╔══════════════════════════════════════════════════╗
-  ║          KING AKBAR UI LIBRARY v1.5             ║
+  ║          KING AKBAR UI LIBRARY v1.6             ║
   ║    github.com/Akbar025zzz/kingAkbarUi-Speedhub   ║
   ╚══════════════════════════════════════════════════╝
 
@@ -433,6 +433,376 @@ local function AttachCommon(Funcs, Base)
   function Funcs:SetContent(Text) Base.Content.Text = tostring(Text) end
   function Funcs:SetVisible(State) Base.Frame.Visible = State and true or false end
   function Funcs:Destroy() Base.Frame:Destroy() end
+end
+
+-- ═══════════════════════════════════════════════════
+--  TABBOX  (Window → Tab → TabBox → Page → Komponen)
+--  Satu kotak berisi beberapa sub-halaman (Page). Setiap Page punya
+--  API item yang sama dengan Section: AddToggle, AddSlider, dst.
+--  API standar: SetValue / GetValue / SetVisible / Destroy / OnChanged
+-- ═══════════════════════════════════════════════════
+local TabBox = {}
+TabBox.__index = TabBox
+
+-- Method milik Page. Method lain (AddToggle, AddSlider, ...) diteruskan ke Items.
+local TabBoxPage = {}
+local TabBoxPageMT = {
+  __index = function(t, k)
+    local v = TabBoxPage[k]
+    if v ~= nil then return v end
+    local items = rawget(t, "Items")
+    if items then return items[k] end
+    return nil
+  end,
+}
+
+function TabBox.new(Parent, Order, Config, Hooks)
+  local self = setmetatable({}, TabBox)
+  self.Connections = {}   -- semua koneksi box ini, di-disconnect saat Destroy
+  self.Callbacks   = {}   -- registry OnChanged
+  self.Pages       = {}
+  self.Current     = nil
+  self.Destroyed   = false
+  self.Hooks       = Hooks or {}
+
+  -- Config: { Tabs = {"A","B"}, Default = "A", Swipe = false }  atau  { "A", "B" }
+  local Names, Default, Swipe
+  if type(Config) == "table" and type(Config[1]) == "string" then
+    Names, Default, Swipe = Config, Config.Default, Config.Swipe
+  else
+    Names   = Get(Config, 1, "Tabs", {})
+    Default = Get(Config, 2, "Default", nil)
+    Swipe   = Get(Config, 3, "Swipe", false)
+  end
+  if type(Names) ~= "table" then Names = {} end
+
+  -- kotak utama (tinggi otomatis mengikuti Page yang aktif)
+  self.Root = Custom:Create("Frame", {
+    Name = "TabBox",
+    BackgroundColor3 = CONFIG.Theme.Panel,
+    BackgroundTransparency = 0.935, BorderSizePixel = 0,
+    AutomaticSize = Enum.AutomaticSize.Y,
+    LayoutOrder = Order,
+    Size = UDim2.new(1, 0, 0, 0),
+    ZIndex = 5,
+  }, Parent)
+  Custom:Create("UICorner", { CornerRadius = UDim.new(0, 6) }, self.Root)
+  Custom:Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder }, self.Root)
+
+  self.Header = Custom:Create("Frame", {
+    Name = "Header",
+    BackgroundTransparency = 1, BorderSizePixel = 0,
+    LayoutOrder = 1,
+    Size = UDim2.new(1, 0, 0, 34),
+    ZIndex = 6,
+  }, self.Root)
+  Custom:Create("UIListLayout", {
+    FillDirection = Enum.FillDirection.Horizontal,
+    SortOrder = Enum.SortOrder.LayoutOrder,
+  }, self.Header)
+
+  Custom:Create("Frame", {
+    Name = "Divider",
+    BackgroundColor3 = CONFIG.Theme.Divider,
+    BackgroundTransparency = 0.7, BorderSizePixel = 0,
+    LayoutOrder = 2,
+    Size = UDim2.new(1, 0, 0, 1),
+    ZIndex = 6,
+  }, self.Root)
+
+  self.Body = Custom:Create("Frame", {
+    Name = "Body",
+    BackgroundTransparency = 1, BorderSizePixel = 0,
+    AutomaticSize = Enum.AutomaticSize.Y,
+    LayoutOrder = 3,
+    Size = UDim2.new(1, 0, 0, 0),
+    ZIndex = 5,
+  }, self.Root)
+  Custom:Create("UIPadding", {
+    PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6),
+    PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6),
+  }, self.Body)
+  -- UIListLayout mengabaikan Page yang Visible = false, jadi tinggi Body = Page aktif
+  Custom:Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder }, self.Body)
+
+  -- swipe kiri/kanan di area isi untuk pindah Page (khusus touch, opsional)
+  if Swipe == true then
+    local startPos
+    self:_bind(self.Body.InputBegan, function(input)
+      if input.UserInputType == Enum.UserInputType.Touch then
+        startPos = input.Position
+      end
+    end)
+    self:_bind(self.Body.InputEnded, function(input)
+      if startPos and input.UserInputType == Enum.UserInputType.Touch then
+        local d = input.Position - startPos
+        startPos = nil
+        if math.abs(d.X) > 70 and math.abs(d.Y) < 35 then
+          self:_step(d.X < 0 and 1 or -1)
+        end
+      end
+    end)
+  end
+
+  for _, Name in ipairs(Names) do self:AddTab(Name) end
+  if Default ~= nil then
+    local P = self:GetTab(Default)
+    if P then self:_select(P, true, true) end
+  end
+
+  return self
+end
+
+-- ─────────── internal ───────────
+-- simpan koneksi ke self.Connections + tracker library; error handler aman
+function TabBox:_bind(Signal, Fn)
+  local Conn = BindLib(Signal, function(...)
+    local ok, err = pcall(Fn, ...)
+    if not ok then warn("[KingAkbarUI] TabBox error: " .. tostring(err)) end
+  end)
+  table.insert(self.Connections, Conn)
+  return Conn
+end
+
+function TabBox:_fire(...)
+  for _, entry in ipairs(table.clone(self.Callbacks)) do
+    SafeCall(entry.Fn, ...)
+  end
+end
+
+function TabBox:_relayout()
+  local n = 0
+  for _, P in ipairs(self.Pages) do
+    if P.Button.Visible then n += 1 end
+  end
+  if n == 0 then return end
+  for _, P in ipairs(self.Pages) do
+    P.Button.Size = UDim2.new(1 / n, 0, 1, 0)
+  end
+end
+
+function TabBox:_firstVisible(Exclude)
+  for _, P in ipairs(self.Pages) do
+    if P ~= Exclude and P.Button.Visible then return P end
+  end
+  return nil
+end
+
+function TabBox:_step(Dir)
+  local list, cur = {}, 0
+  for _, P in ipairs(self.Pages) do
+    if P.Button.Visible then
+      table.insert(list, P)
+      if P == self.Current then cur = #list end
+    end
+  end
+  local target = list[cur + Dir]
+  if target then self:_select(target, false) end
+end
+
+function TabBox:_select(Page, Instant, Silent)
+  if self.Destroyed or not Page or Page.Destroyed then return end
+  if self.Current == Page then return end
+  self.Current = Page
+  local t = Instant and 0 or 0.2
+  for _, P in ipairs(self.Pages) do
+    local sel = (P == Page)
+    P.Frame.Visible = sel
+    Tween(P.Button, { TextColor3 = sel and CONFIG.Theme.Text or CONFIG.Theme.SubText }, t)
+    Tween(P.Indicator, {
+      Size = sel and UDim2.new(1, -16, 0, 2) or UDim2.new(0, 0, 0, 2),
+    }, t)
+  end
+  if self.Hooks.OnSelect then SafeCall(self.Hooks.OnSelect) end
+  if not Silent then self:_fire(Page.Name, Page.Index) end
+end
+
+-- ─────────── API publik ───────────
+-- AddTab("Nama") → Page (punya AddToggle, AddSlider, ... + Select/SetTitle/SetVisible/Destroy)
+function TabBox:AddTab(Name)
+  if self.Destroyed then
+    warn("[KingAkbarUI] TabBox:AddTab dipanggil setelah Destroy")
+    return nil
+  end
+  if type(Name) == "table" then Name = Get(Name, 1, "Name", "") end
+  local Index = #self.Pages + 1
+  Name = tostring(Name or ("Tab " .. Index))
+  if Name == "" then Name = "Tab " .. Index end
+
+  local Frame = Custom:Create("Frame", {
+    Name = "Page_" .. Name,
+    BackgroundTransparency = 1, BorderSizePixel = 0,
+    AutomaticSize = Enum.AutomaticSize.Y,
+    LayoutOrder = Index,
+    Size = UDim2.new(1, 0, 0, 0),
+    Visible = false,
+    ZIndex = 5,
+  }, self.Body)
+  Custom:Create("UIListLayout", {
+    Padding = UDim.new(0, 3),
+    SortOrder = Enum.SortOrder.LayoutOrder,
+  }, Frame)
+
+  local Button = Custom:Create("TextButton", {
+    Name = "TabBtn",
+    Font = CONFIG.Font.Bold, Text = Name, TextSize = 13,
+    TextColor3 = CONFIG.Theme.SubText,
+    TextTruncate = Enum.TextTruncate.AtEnd,
+    AutoButtonColor = false,
+    BackgroundTransparency = 1, BorderSizePixel = 0,
+    LayoutOrder = Index,
+    Size = UDim2.new(1, 0, 1, 0),
+    ZIndex = 7,
+  }, self.Header)
+
+  local Indicator = Custom:Create("Frame", {
+    Name = "Indicator",
+    AnchorPoint = Vector2.new(0.5, 1),
+    BackgroundColor3 = CONFIG.Theme.Primary, BorderSizePixel = 0,
+    Position = UDim2.new(0.5, 0, 1, 0),
+    Size = UDim2.new(0, 0, 0, 2),
+    ZIndex = 8,
+  }, Button)
+  Custom:Create("UICorner", { CornerRadius = UDim.new(1, 0) }, Indicator)
+
+  local Page = setmetatable({
+    Name = Name, Index = Index, Box = self,
+    Frame = Frame, Button = Button, Indicator = Indicator,
+    Destroyed = false,
+  }, TabBoxPageMT)
+
+  if type(self.Hooks.BuildItems) == "function" then
+    Page.Items = self.Hooks.BuildItems(Frame)
+  else
+    warn("[KingAkbarUI] TabBox: Hooks.BuildItems tidak ada, Page kosong")
+  end
+
+  table.insert(self.Pages, Page)
+  self:_relayout()
+
+  self:_bind(Button.Activated, function()
+    CircleClick(Button)
+    self:_select(Page, false)
+  end)
+
+  if self.Current == nil then self:_select(Page, true, true) end
+  return Page
+end
+
+-- GetTab("Nama") atau GetTab(2)
+function TabBox:GetTab(Value)
+  if type(Value) == "number" then return self.Pages[Value] end
+  for _, P in ipairs(self.Pages) do
+    if P.Name == Value then return P end
+  end
+  return nil
+end
+
+-- SetValue("Nama" | index, fire?)  — fire = false: pindah tanpa memanggil OnChanged
+function TabBox:SetValue(Value, Fire)
+  if self.Destroyed then return end
+  local P = self:GetTab(Value)
+  if not P then
+    warn("[KingAkbarUI] TabBox:SetValue tab tidak ditemukan: " .. tostring(Value))
+    return
+  end
+  if not P.Button.Visible then
+    warn("[KingAkbarUI] TabBox:SetValue tab sedang disembunyikan: " .. P.Name)
+    return
+  end
+  self:_select(P, false, Fire == false)
+end
+
+function TabBox:GetValue()
+  return self.Current and self.Current.Name or nil
+end
+
+function TabBox:GetIndex()
+  return self.Current and self.Current.Index or nil
+end
+
+-- OnChanged(function(namaTab, index) end) → { Disconnect = fn }
+function TabBox:OnChanged(Fn)
+  if type(Fn) ~= "function" then
+    warn("[KingAkbarUI] TabBox:OnChanged butuh function")
+    return { Disconnect = function() end }
+  end
+  local entry = { Fn = Fn }
+  table.insert(self.Callbacks, entry)
+  local Box = self
+  return {
+    Disconnect = function()
+      local i = table.find(Box.Callbacks, entry)
+      if i then table.remove(Box.Callbacks, i) end
+    end,
+  }
+end
+
+function TabBox:SetVisible(State)
+  if self.Root then self.Root.Visible = State and true or false end
+end
+
+function TabBox:Destroy()
+  if self.Destroyed then return end
+  self.Destroyed = true
+  for _, c in ipairs(self.Connections) do
+    pcall(function() c:Disconnect() end)
+  end
+  table.clear(self.Connections)
+  table.clear(self.Callbacks)
+  for _, P in ipairs(self.Pages) do P.Destroyed = true end
+  table.clear(self.Pages)
+  self.Current = nil
+  if self.Root then self.Root:Destroy() end
+end
+
+-- ─────────── method Page ───────────
+function TabBoxPage:Select()
+  self.Box:_select(self, false)
+end
+
+function TabBoxPage:SetTitle(Text)
+  self.Name = tostring(Text)
+  self.Button.Text = self.Name
+  self.Frame.Name = "Page_" .. self.Name
+end
+
+function TabBoxPage:SetVisible(State)
+  if self.Destroyed then return end
+  State = State and true or false
+  local Box = self.Box
+  self.Button.Visible = State
+  Box:_relayout()
+  if not State and Box.Current == self then
+    self.Frame.Visible = false
+    Box.Current = nil
+    local nxt = Box:_firstVisible(self)
+    if nxt then Box:_select(nxt, false) end
+  elseif State and Box.Current == nil then
+    Box:_select(self, true)
+  end
+end
+
+function TabBoxPage:Destroy()
+  if self.Destroyed then return end
+  self.Destroyed = true
+  local Box = self.Box
+  local wasCurrent = (Box.Current == self)
+  local idx = table.find(Box.Pages, self)
+  if idx then table.remove(Box.Pages, idx) end
+  for i, P in ipairs(Box.Pages) do
+    P.Index = i
+    P.Button.LayoutOrder = i
+    P.Frame.LayoutOrder = i
+  end
+  self.Button:Destroy()
+  self.Frame:Destroy()
+  if wasCurrent then
+    Box.Current = nil
+    local nxt = Box:_firstVisible(nil)
+    if nxt then Box:_select(nxt, false) end
+  end
+  Box:_relayout()
 end
 
 -- ═══════════════════════════════════════════════════
@@ -1342,129 +1712,9 @@ function Speed_Library:CreateWindow(Config)
       SelectTab(TabObj, false)
     end)
 
-    -- ═══════════ Sections ═══════════
-    local Sections, CountSection = {}, 0
-
-    function Sections:AddSection(SectionTitle, OpenDefault)
-      if type(SectionTitle) == "table" then
-        OpenDefault = SectionTitle[2]
-        if OpenDefault == nil then OpenDefault = SectionTitle.Open end
-        SectionTitle = SectionTitle[1] or SectionTitle.Title
-      end
-      SectionTitle = tostring(SectionTitle or "")
-      local OpenSection = OpenDefault == true
-      CountSection += 1
-
-      local Section = Custom:Create("Frame", {
-        Name = "Section",
-        BackgroundTransparency = 1, BorderSizePixel = 0,
-        ClipsDescendants = true,
-        LayoutOrder = CountSection,
-        Size = UDim2.new(1, 0, 0, 34),
-        ZIndex = 5,
-      }, ScrolLayers)
-
-      local SectionReal = Custom:Create("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0),
-        BackgroundColor3 = CONFIG.Theme.Panel,
-        BackgroundTransparency = 0.935, BorderSizePixel = 0,
-        Position = UDim2.new(0.5, 0, 0, 0),
-        Size = UDim2.new(1, 0, 0, 34),
-        ZIndex = 5,
-      }, Section)
-      Custom:Create("UICorner", { CornerRadius = UDim.new(0, 6) }, SectionReal)
-
-      local SectionButton = Custom:Create("TextButton", {
-        Font = CONFIG.Font.Regular, Text = "",
-        BackgroundTransparency = 1, BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 1, 0),
-        ZIndex = 7,
-      }, SectionReal)
-
-      local FeatureFrame = Custom:Create("Frame", {
-        AnchorPoint = Vector2.new(1, 0.5),
-        BackgroundTransparency = 1, BorderSizePixel = 0,
-        Position = UDim2.new(1, -5, 0.5, 0),
-        Size = UDim2.fromOffset(20, 20),
-        ZIndex = 6,
-      }, SectionReal)
-
-      Custom:Create("ImageLabel", {
-        Image = CONFIG.Assets.ArrowIcon,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundTransparency = 1, BorderSizePixel = 0,
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Rotation = -90, Size = UDim2.new(1, 6, 1, 6),
-        ZIndex = 6,
-      }, FeatureFrame)
-
-      Custom:Create("TextLabel", {
-        Font = CONFIG.Font.Bold, Text = SectionTitle,
-        TextColor3 = CONFIG.Theme.Text, TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextTruncate = Enum.TextTruncate.AtEnd,
-        AnchorPoint = Vector2.new(0, 0.5),
-        BackgroundTransparency = 1, BorderSizePixel = 0,
-        Position = UDim2.new(0, 10, 0.5, 0),
-        Size = UDim2.new(1, -50, 0, 13),
-        ZIndex = 6,
-      }, SectionReal)
-
-      local SectionDecideFrame = Custom:Create("Frame", {
-        BackgroundColor3 = CONFIG.Theme.Panel, BorderSizePixel = 0,
-        AnchorPoint = Vector2.new(0.5, 0),
-        Position = UDim2.new(0.5, 0, 0, 37),
-        Size = UDim2.new(0, 0, 0, 2),
-        ZIndex = 5,
-      }, Section)
-      Custom:Create("UICorner", {}, SectionDecideFrame)
-      Custom:Create("UIGradient", {
-        Color = ColorSequence.new {
-          ColorSequenceKeypoint.new(0, CONFIG.Theme.Background),
-          ColorSequenceKeypoint.new(0.5, CONFIG.Theme.Primary),
-          ColorSequenceKeypoint.new(1, CONFIG.Theme.Background),
-        },
-      }, SectionDecideFrame)
-
-      local SectionAdd = Custom:Create("Frame", {
-        Name = "SectionContent",
-        AnchorPoint = Vector2.new(0.5, 0),
-        BackgroundTransparency = 1, BorderSizePixel = 0,
-        ClipsDescendants = true,
-        Position = UDim2.new(0.5, 0, 0, 42),
-        Size = UDim2.new(1, 0, 0, 0),
-        ZIndex = 5,
-      }, Section)
-
-      local SectionList = Custom:Create("UIListLayout", {
-        Padding = UDim.new(0, 3),
-        SortOrder = Enum.SortOrder.LayoutOrder,
-      }, SectionAdd)
-
-      -- tinggi section otomatis mengikuti isi (tidak perlu hitung manual)
-      local function ApplyLayout(Animate)
-        local t = Animate and 0.15 or 0
-        local contentH = SectionList.AbsoluteContentSize.Y
-        SectionAdd.Size = UDim2.new(1, 0, 0, contentH)
-        Tween(FeatureFrame, { Rotation = OpenSection and 90 or 0 }, t)
-        Tween(Section, { Size = UDim2.new(1, 0, 0, OpenSection and (42 + contentH + 4) or 34) }, t)
-        Tween(SectionDecideFrame, {
-          Size = OpenSection and UDim2.new(1, 0, 0, 2) or UDim2.new(0, 0, 0, 2),
-        }, t)
-      end
-
-      SectionList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        ApplyLayout(true)
-      end)
-
-      SectionButton.Activated:Connect(function()
-        CircleClick(SectionButton)
-        OpenSection = not OpenSection
-        ApplyLayout(true)
-      end)
-
-      ApplyLayout(false)
-
+    -- Bangun API item (AddToggle, AddSlider, ...) di container mana pun.
+    -- Dipakai oleh Section dan Page milik TabBox.
+    local function BuildItems(SectionAdd, ScrolLayers)
       -- ═══════════ Items ═══════════
       local Item = {}
       local ItemCount = 0
@@ -2318,6 +2568,145 @@ function Speed_Library:CreateWindow(Config)
       end
 
       return Item
+    end
+
+    -- ═══════════ Sections ═══════════
+    local Sections, CountSection = {}, 0
+
+    function Sections:AddSection(SectionTitle, OpenDefault)
+      if type(SectionTitle) == "table" then
+        OpenDefault = SectionTitle[2]
+        if OpenDefault == nil then OpenDefault = SectionTitle.Open end
+        SectionTitle = SectionTitle[1] or SectionTitle.Title
+      end
+      SectionTitle = tostring(SectionTitle or "")
+      local OpenSection = OpenDefault == true
+      CountSection += 1
+
+      local Section = Custom:Create("Frame", {
+        Name = "Section",
+        BackgroundTransparency = 1, BorderSizePixel = 0,
+        ClipsDescendants = true,
+        LayoutOrder = CountSection,
+        Size = UDim2.new(1, 0, 0, 34),
+        ZIndex = 5,
+      }, ScrolLayers)
+
+      local SectionReal = Custom:Create("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0),
+        BackgroundColor3 = CONFIG.Theme.Panel,
+        BackgroundTransparency = 0.935, BorderSizePixel = 0,
+        Position = UDim2.new(0.5, 0, 0, 0),
+        Size = UDim2.new(1, 0, 0, 34),
+        ZIndex = 5,
+      }, Section)
+      Custom:Create("UICorner", { CornerRadius = UDim.new(0, 6) }, SectionReal)
+
+      local SectionButton = Custom:Create("TextButton", {
+        Font = CONFIG.Font.Regular, Text = "",
+        BackgroundTransparency = 1, BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 1, 0),
+        ZIndex = 7,
+      }, SectionReal)
+
+      local FeatureFrame = Custom:Create("Frame", {
+        AnchorPoint = Vector2.new(1, 0.5),
+        BackgroundTransparency = 1, BorderSizePixel = 0,
+        Position = UDim2.new(1, -5, 0.5, 0),
+        Size = UDim2.fromOffset(20, 20),
+        ZIndex = 6,
+      }, SectionReal)
+
+      Custom:Create("ImageLabel", {
+        Image = CONFIG.Assets.ArrowIcon,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1, BorderSizePixel = 0,
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Rotation = -90, Size = UDim2.new(1, 6, 1, 6),
+        ZIndex = 6,
+      }, FeatureFrame)
+
+      Custom:Create("TextLabel", {
+        Font = CONFIG.Font.Bold, Text = SectionTitle,
+        TextColor3 = CONFIG.Theme.Text, TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd,
+        AnchorPoint = Vector2.new(0, 0.5),
+        BackgroundTransparency = 1, BorderSizePixel = 0,
+        Position = UDim2.new(0, 10, 0.5, 0),
+        Size = UDim2.new(1, -50, 0, 13),
+        ZIndex = 6,
+      }, SectionReal)
+
+      local SectionDecideFrame = Custom:Create("Frame", {
+        BackgroundColor3 = CONFIG.Theme.Panel, BorderSizePixel = 0,
+        AnchorPoint = Vector2.new(0.5, 0),
+        Position = UDim2.new(0.5, 0, 0, 37),
+        Size = UDim2.new(0, 0, 0, 2),
+        ZIndex = 5,
+      }, Section)
+      Custom:Create("UICorner", {}, SectionDecideFrame)
+      Custom:Create("UIGradient", {
+        Color = ColorSequence.new {
+          ColorSequenceKeypoint.new(0, CONFIG.Theme.Background),
+          ColorSequenceKeypoint.new(0.5, CONFIG.Theme.Primary),
+          ColorSequenceKeypoint.new(1, CONFIG.Theme.Background),
+        },
+      }, SectionDecideFrame)
+
+      local SectionAdd = Custom:Create("Frame", {
+        Name = "SectionContent",
+        AnchorPoint = Vector2.new(0.5, 0),
+        BackgroundTransparency = 1, BorderSizePixel = 0,
+        ClipsDescendants = true,
+        Position = UDim2.new(0.5, 0, 0, 42),
+        Size = UDim2.new(1, 0, 0, 0),
+        ZIndex = 5,
+      }, Section)
+
+      local SectionList = Custom:Create("UIListLayout", {
+        Padding = UDim.new(0, 3),
+        SortOrder = Enum.SortOrder.LayoutOrder,
+      }, SectionAdd)
+
+      -- tinggi section otomatis mengikuti isi (tidak perlu hitung manual)
+      local function ApplyLayout(Animate)
+        local t = Animate and 0.15 or 0
+        local contentH = SectionList.AbsoluteContentSize.Y
+        SectionAdd.Size = UDim2.new(1, 0, 0, contentH)
+        Tween(FeatureFrame, { Rotation = OpenSection and 90 or 0 }, t)
+        Tween(Section, { Size = UDim2.new(1, 0, 0, OpenSection and (42 + contentH + 4) or 34) }, t)
+        Tween(SectionDecideFrame, {
+          Size = OpenSection and UDim2.new(1, 0, 0, 2) or UDim2.new(0, 0, 0, 2),
+        }, t)
+      end
+
+      SectionList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        ApplyLayout(true)
+      end)
+
+      SectionButton.Activated:Connect(function()
+        CircleClick(SectionButton)
+        OpenSection = not OpenSection
+        ApplyLayout(true)
+      end)
+
+      ApplyLayout(false)
+
+      return BuildItems(SectionAdd, ScrolLayers)
+    end
+
+    -- ═══════════ TabBox ═══════════
+    -- Tab:AddTabBox({ Tabs = {"A","B"}, Default = "A", Swipe = false })
+    function Sections:AddTabBox(TBConfig)
+      CountSection += 1
+      return TabBox.new(ScrolLayers, CountSection, TBConfig, {
+        BuildItems = function(Container) return BuildItems(Container, ScrolLayers) end,
+        OnSelect   = function()
+          CloseDropdownPanel()
+          ClosePicker()
+        end,
+      })
     end
 
     return Sections
