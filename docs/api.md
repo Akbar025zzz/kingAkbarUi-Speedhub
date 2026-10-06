@@ -1,87 +1,78 @@
-# API Reference
+# API Reference (v1.6)
+
+Semua config menerima format **array** (urutan di tabel) atau **named** (nama field).
 
 ## Library
 
 | Method | Deskripsi |
 | --- | --- |
-| `CreateWindow(config)` | Buat window utama |
-| `SetTheme(table)` | Ganti tema (runtime) |
-| `SetFont(table)` | Ganti font |
-| `SetNotification(config)` | Tampilkan notifikasi |
-| `Notify(config)` | Alias `SetNotification` |
-| `Dialog(config)` | Confirm dialog |
-| `SetSound(bool)` | ON/OFF sound effects |
-| `EnableSave(fileName)` | Aktifkan save built-in |
-| `DisableSave()` | Matikan save |
-| `SetToggleKey(key)` | Ganti hotkey toggle UI |
-| `GetConfig()` | Ambil CONFIG internal |
+| `CreateWindow(config)` | Buat window, return `Window` |
+| `SetTheme(table)` | Ganti warna tema (panggil **sebelum** `CreateWindow`) |
+| `SetFont(table)` | Ganti font (`Bold`, `Regular`) |
+| `SetNotification(config)` / `Notify(config)` | Tampilkan notifikasi |
+| `GetConfig()` | Ambil tabel konfigurasi internal |
 | `Destroy()` | Hapus semua UI |
 
 ## CreateWindow(config)
 
-| Field | Type | Default | Deskripsi |
+| # | Field | Default | Deskripsi |
 | --- | --- | --- | --- |
-| `Title` | string | `""` | Judul window |
-| `Description` | string | `""` | Sub-judul |
-| `TabWidth` | number | `100` | Lebar panel tab |
-| `SizeUi` | UDim2 | `420x280` | Ukuran window |
-| `Search` | bool | `false` | Kolom search di daftar tab |
-| `Profile` | bool | `false` | Avatar + welcome di footer |
-| `Logo` | string | `""` | Icon di sebelah judul |
-| `HideName` | bool | `true` | Sensor nama user (abc***) |
-| `ToggleKey` | KeyCode | `RightShift` | Hotkey show/hide UI |
+| 1 | `Title` | `""` | Judul |
+| 2 | `Description` | `""` | Sub-judul |
+| 3 | `TabWidth` | `112` | Lebar panel tab |
+| 4 | `SizeUi` | otomatis | `UDim2` ukuran window; kosong = menyesuaikan layar |
+| 5 | `Search` | `false` | Kolom search di daftar tab |
+| 6 | `Profile` | `false` | Avatar + "Welcome, nama" di bawah daftar tab |
+| 7 | `Logo` | `""` | Ikon di sebelah judul |
+| 8 | `HideName` | `true` | Sensor nama user (abc***) |
+| 9 | `ToggleKey` | `RightShift` | Hotkey tampil/sembunyi |
 
 ## Window
 
 | Method | Deskripsi |
 | --- | --- |
-| `CreateTab({ Name, Icon })` | Buat tab baru |
-| `Show()` / `Hide()` / `Toggle()` | Kontrol visibility |
+| `CreateTab({ Name, Icon })` | Buat tab, return `Tab` |
+| `AddBadge(text)` | Badge di topbar; return objek dengan `SetText(t)`, `Destroy()` |
+| `SetToggleKey(KeyCode)` | Ganti hotkey |
+| `Show()` / `Hide()` / `Toggle()` | Visibilitas |
 | `Destroy()` | Hapus window |
 
-## Item Components
+## Tab
 
-Semua komponen mendukung format array (`{ "Title", "Content", ... }`) atau named (`{ Title = "..." }`). Method umum: `SetTitle(text)`, `SetContent(text)`, `SetVisible(bool)`, `Destroy()`.
+| Method | Deskripsi |
+| --- | --- |
+| `AddSection(judul, terbukaDefault)` | Section collapsible, return `Section` |
+| `AddTabBox(config)` | Kotak multi-halaman, lihat [tabbox.md](tabbox.md) |
 
-| Method | Field | Extra Methods |
+## Komponen (Section dan Page TabBox)
+
+Method umum semua komponen: `SetTitle(text)`, `SetContent(text)`, `SetVisible(bool)`, `Destroy()`.
+
+| Method | Urutan field | Method tambahan |
 | --- | --- | --- |
-| `AddButton` | `Title, Content, Icon, Callback, Tooltip` | `Set(config)` |
-| `AddToggle` | `Title, Content, Default, Callback, Tooltip, SaveKey` | `Set(bool, fire?)`, `.Value` |
-| `AddSlider` | `Title, Content, Increment, Min, Max, Default, Callback, Tooltip, SaveKey` | `Set(number, fire?)`, `.Value` |
-| `AddInput` | `Title, Content, Default, Placeholder, Callback, Tooltip, SaveKey` | `Set(text, fire?)` |
-| `AddDropdown` | `Title, Content, Multi, Options, Default, Callback, Search, Tooltip, SaveKey` | `Set(v)`, `Refresh(list, sel)`, `AddOption(name)`, `Clear()` |
-| `AddKeybind` 🆕 | `Title, Content, Default, Callback, Tooltip, SaveKey` | `Set(key)`, `Get()` |
-| `AddColorPicker` 🆕 | `Title, Content, Default, Callback, Presets, Tooltip, SaveKey` | `Set(color)`, `Get()` |
-| `AddPanel` | `Title, Content, Tooltip` | sub: `AddButton`, `AddToggle` |
-| `AddParagraph` | `Title, Content, Tooltip` | `Set(config)` |
-| `AddSeperator` | `Title, Tooltip` | `Set(config)` |
+| `AddParagraph` | `Title, Content` | `Set(config)` |
+| `AddSeperator` | `Title` | `Set(config)` |
 | `AddLine` | — | `Destroy()` |
+| `AddButton` | `Title, Content, Icon, Callback` | `Set(config)` |
+| `AddToggle` | `Title, Content, Default, Callback` | `Set(value)`, `.Value` |
+| `AddSlider` | `Title, Content, Increment, Min, Max, Default, Callback` | `Set(value, fire?)` |
+| `AddInput` | `Title, Content, Default, Callback` | `Set(value)` |
+| `AddDropdown` | `Title, Content, Multi, Options, Default, Callback` | `Set(value, noCallback?)`, `Clear()`, `AddOption(name)`, `Refresh(list, selected)` |
+| `AddKeybind` | `Title, Content, Default, Callback, Changed` | `Set(key, noCallback?)` |
+| `AddColorPicker` | `Title, Content, Default, Callback` | `Set(color, noCallback?)` |
+| `AddPanel` | `Title, Content` | `AddButton(cfg)`, `AddToggle(cfg)` |
 
-- **`SaveKey`**: jika diisi, nilai item otomatis dimuat saat script jalan dan tersimpan saat berubah (butuh `EnableSave()` atau wrapper).
-- **`fire`**: `Set(value, false)` mengubah visual tanpa memanggil callback.
+Catatan:
+- Keybind: `Callback` dipanggil saat hotkey **ditekan**, `Changed` saat key **diganti**.
+- Dropdown `Default` berupa tabel (`{ "A" }`); callback menerima tabel pilihan.
+- Callback komponen lama masih **satu slot**. `OnChanged` dengan registry baru ada di TabBox.
 
 ## SetNotification(config)
 
-| Field | Type | Default |
+| # | Field | Default |
 | --- | --- | --- |
-| `Title` | string | `""` |
-| `Description` | string | `""` |
-| `Content` | string | `""` |
-| `Time` | number | `0.5` |
-| `Delay` | number | `5` |
-| `Progress` 🆕 | bool | `true` |
-
-Maks 5 notif bersamaan, sisanya otomatis antri.
-
-## Dialog(config)
-
-```lua
-Library:Dialog({
-  Title   = "Konfirmasi",
-  Content = "Yakin lanjut?",
-  Buttons = {
-    { "Ya", function() end, true },   -- true = tombol primary
-    { "Batal", function() end },
-  },
-})
-```
+| 1 | `Title` | `""` |
+| 2 | `Description` | `""` |
+| 3 | `Content` | `""` |
+| 5 | `Time` | `0.5` (lama animasi) |
+| 6 | `Delay` | `5` (lama tampil) |
