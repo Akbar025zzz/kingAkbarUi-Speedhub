@@ -1,29 +1,15 @@
---[[ CONTOH DASAR — window, 1 tab, 1 section, komponen utama ]]
+-- Contoh dasar King Akbar UI v1.6
+local Lib = loadstring(game:HttpGet(
+  "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/init.lua"
+))()
 
-local KA = loadstring(game:HttpGet("https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/loader.lua"))()
-local Library = KA.Library
+local Win = Lib:CreateWindow({ "King Akbar", "v1.6", 100, UDim2.fromOffset(420, 280) })
+local Tab = Win:CreateTab({ "Main", "rbxassetid://7734010488" })
+local Sec = Tab:AddSection("Farm", true)
 
-local Window = Library:CreateWindow({ Title = "King Akbar", Description = "Basic" })
-local Tab    = Window:CreateTab({ "Main" })
-local Section = Tab:AddSection("Contoh", true)
+Sec:AddToggle({ "Auto Farm", "Farm otomatis", false, function(v) print("Auto Farm:", v) end })
+Sec:AddSlider({ "WalkSpeed", "", 1, 16, 200, 16, function(v) print("WalkSpeed:", v) end })
+Sec:AddDropdown({ "Mode", "", false, { "A", "B" }, { "A" }, function(v) print("Mode:", v[1]) end })
+Sec:AddButton({ Title = "Halo", Callback = function() print("Halo!") end })
 
-Section:AddParagraph({ Title = "Halo!", Content = "Ini contoh paling sederhana." })
-
-Section:AddButton({
-  Title = "Tombol", Content = "Klik untuk notifikasi",
-  Callback = function()
-    Library:SetNotification({ "King Akbar", "•", "Tombol ditekan", nil, 0.4, 3 })
-  end,
-})
-
-Section:AddToggle({ Title = "Toggle", Default = false,
-  Callback = function(v) print("Toggle:", v) end })
-
-Section:AddSlider({ Title = "Slider", Content = "Min 0 – Max 100", Min = 0, Max = 100, Default = 50,
-  Callback = function(v) print("Slider:", v) end })
-
-Section:AddInput({ Title = "Input", Default = "",
-  Callback = function(v) print("Input:", v) end })
-
-Section:AddDropdown({ Title = "Dropdown", Options = { "A", "B", "C" }, Default = { "A" },
-  Callback = function(v) print("Dropdown:", v[1]) end })
+Lib:SetNotification({ "King Akbar", "Loaded", "Script berhasil dimuat" })
