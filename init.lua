@@ -1,6 +1,6 @@
 --[[
   ╔══════════════════════════════════════════════════╗
-  ║          KING AKBAR UI LIBRARY v1.6             ║
+  ║          KING AKBAR UI LIBRARY v1.7             ║
   ║    github.com/Akbar025zzz/kingAkbarUi-Speedhub   ║
   ╚══════════════════════════════════════════════════╝
 
@@ -436,6 +436,42 @@ local function AttachCommon(Funcs, Base)
 end
 
 -- ═══════════════════════════════════════════════════
+--  HELPER KOMPONEN BARU (TabBox, GroupBox, dst.)
+--  Owner wajib punya: Connections = {}, Callbacks = {}
+-- ═══════════════════════════════════════════════════
+-- koneksi dicatat di Owner.Connections + tracker library, error jadi warn()
+local function BindOwned(Owner, Signal, Fn, Label)
+  local Conn = BindLib(Signal, function(...)
+    local ok, err = pcall(Fn, ...)
+    if not ok then warn("[KingAkbarUI] " .. Label .. " error: " .. tostring(err)) end
+  end)
+  table.insert(Owner.Connections, Conn)
+  return Conn
+end
+
+-- registry OnChanged: banyak listener, tiap listener bisa dilepas
+local function AddChanged(Owner, Fn, Label)
+  if type(Fn) ~= "function" then
+    warn("[KingAkbarUI] " .. Label .. ": OnChanged butuh function")
+    return { Disconnect = function() end }
+  end
+  local entry = { Fn = Fn }
+  table.insert(Owner.Callbacks, entry)
+  return {
+    Disconnect = function()
+      local i = table.find(Owner.Callbacks, entry)
+      if i then table.remove(Owner.Callbacks, i) end
+    end,
+  }
+end
+
+local function FireChanged(Owner, ...)
+  for _, entry in ipairs(table.clone(Owner.Callbacks)) do
+    SafeCall(entry.Fn, ...)
+  end
+end
+
+-- ═══════════════════════════════════════════════════
 --  TABBOX  (Window → Tab → TabBox → Page → Komponen)
 --  Satu kotak berisi beberapa sub-halaman (Page). Setiap Page punya
 --  API item yang sama dengan Section: AddToggle, AddSlider, dst.
@@ -556,18 +592,11 @@ end
 -- ─────────── internal ───────────
 -- simpan koneksi ke self.Connections + tracker library; error handler aman
 function TabBox:_bind(Signal, Fn)
-  local Conn = BindLib(Signal, function(...)
-    local ok, err = pcall(Fn, ...)
-    if not ok then warn("[KingAkbarUI] TabBox error: " .. tostring(err)) end
-  end)
-  table.insert(self.Connections, Conn)
-  return Conn
+  return BindOwned(self, Signal, Fn, "TabBox")
 end
 
 function TabBox:_fire(...)
-  for _, entry in ipairs(table.clone(self.Callbacks)) do
-    SafeCall(entry.Fn, ...)
-  end
+  FireChanged(self, ...)
 end
 
 function TabBox:_relayout()
@@ -723,19 +752,7 @@ end
 
 -- OnChanged(function(namaTab, index) end) → { Disconnect = fn }
 function TabBox:OnChanged(Fn)
-  if type(Fn) ~= "function" then
-    warn("[KingAkbarUI] TabBox:OnChanged butuh function")
-    return { Disconnect = function() end }
-  end
-  local entry = { Fn = Fn }
-  table.insert(self.Callbacks, entry)
-  local Box = self
-  return {
-    Disconnect = function()
-      local i = table.find(Box.Callbacks, entry)
-      if i then table.remove(Box.Callbacks, i) end
-    end,
-  }
+  return AddChanged(self, Fn, "TabBox:OnChanged")
 end
 
 function TabBox:SetVisible(State)
@@ -803,6 +820,204 @@ function TabBoxPage:Destroy()
     if nxt then Box:_select(nxt, false) end
   end
   Box:_relayout()
+end
+
+-- ═══════════════════════════════════════════════════
+--  GROUPBOX  (Window → Tab → GroupBox → Komponen)
+--  Kotak berjudul. Beda dengan Section: tidak collapsible secara default,
+--  bisa dibuat collapsible, dan bisa punya tinggi maksimum + scroll sendiri
+--  (MaxHeight). Tanpa MaxHeight tidak ada scroll bersarang di HP.
+--  API standar: SetValue(open) / GetValue / SetVisible / Destroy / OnChanged
+-- ═══════════════════════════════════════════════════
+local GroupBox = {}
+GroupBox.__index = function(t, k)
+  local v = GroupBox[k]
+  if v ~= nil then return v end
+  local items = rawget(t, "Items")
+  if items then return items[k] end
+  return nil
+end
+
+-- Config: { Title, Collapsible = false, Open = true, MaxHeight = nil } atau "Judul"
+function GroupBox.new(Parent, Order, Config, Hooks)
+  local self = setmetatable({}, GroupBox)
+  self.Connections = {}
+  self.Callbacks   = {}
+  self.Destroyed   = false
+  self.Hooks       = Hooks or {}
+
+  local Title       = tostring(Get(Config, 1, "Title", ""))
+  local Collapsible = Get(Config, 2, "Collapsible", false) == true
+  local Open        = Get(Config, 3, "Open", true) ~= false
+  local MaxHeight   = tonumber(Get(Config, 4, "MaxHeight", nil))
+  if MaxHeight and MaxHeight < 60 then MaxHeight = 60 end
+  self.Open = Open
+
+  self.Root = Custom:Create("Frame", {
+    Name = "GroupBox",
+    BackgroundColor3 = CONFIG.Theme.Panel,
+    BackgroundTransparency = 0.935, BorderSizePixel = 0,
+    AutomaticSize = Enum.AutomaticSize.Y,
+    LayoutOrder = Order,
+    Size = UDim2.new(1, 0, 0, 0),
+    ZIndex = 5,
+  }, Parent)
+  Custom:Create("UICorner", { CornerRadius = UDim.new(0, 6) }, self.Root)
+  Custom:Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder }, self.Root)
+
+  self.Header = Custom:Create("Frame", {
+    Name = "Header",
+    BackgroundTransparency = 1, BorderSizePixel = 0,
+    LayoutOrder = 1,
+    Size = UDim2.new(1, 0, 0, 34),
+    ZIndex = 6,
+  }, self.Root)
+
+  self.TitleLabel = Custom:Create("TextLabel", {
+    Font = CONFIG.Font.Bold, Text = Title, TextSize = 13,
+    TextColor3 = CONFIG.Theme.Text,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextTruncate = Enum.TextTruncate.AtEnd,
+    AnchorPoint = Vector2.new(0, 0.5),
+    BackgroundTransparency = 1, BorderSizePixel = 0,
+    Position = UDim2.new(0, 10, 0.5, 0),
+    Size = UDim2.new(1, Collapsible and -40 or -20, 0, 13),
+    ZIndex = 6,
+  }, self.Header)
+
+  if Collapsible then
+    self.Arrow = Custom:Create("ImageLabel", {
+      Image = CONFIG.Assets.ArrowIcon,
+      AnchorPoint = Vector2.new(0.5, 0.5),
+      BackgroundTransparency = 1, BorderSizePixel = 0,
+      Position = UDim2.new(1, -15, 0.5, 0),
+      Size = UDim2.fromOffset(26, 26),
+      Rotation = Open and 90 or 0,
+      ZIndex = 6,
+    }, self.Header)
+
+    local Button = Custom:Create("TextButton", {
+      Font = CONFIG.Font.Regular, Text = "",
+      BackgroundTransparency = 1, BorderSizePixel = 0,
+      Size = UDim2.new(1, 0, 1, 0),
+      ZIndex = 7,
+    }, self.Header)
+    self:_bind(Button.Activated, function()
+      CircleClick(Button)
+      self:SetValue(not self.Open)
+    end)
+  end
+
+  self.Divider = Custom:Create("Frame", {
+    Name = "Divider",
+    BackgroundColor3 = CONFIG.Theme.Divider,
+    BackgroundTransparency = 0.7, BorderSizePixel = 0,
+    LayoutOrder = 2,
+    Size = UDim2.new(1, 0, 0, 1),
+    ZIndex = 6,
+  }, self.Root)
+
+  if MaxHeight then
+    -- mode scroll: tinggi mengikuti isi sampai batas MaxHeight, lewat itu bisa digulir
+    self.Content = Custom:Create("ScrollingFrame", {
+      Name = "Content",
+      CanvasSize = UDim2.new(0, 0, 0, 0),
+      AutomaticCanvasSize = Enum.AutomaticSize.Y,
+      ScrollingDirection = Enum.ScrollingDirection.Y,
+      ScrollBarImageColor3 = CONFIG.Theme.Primary,
+      ScrollBarImageTransparency = 0.45,
+      ScrollBarThickness = 3, VerticalScrollBarInset = Enum.ScrollBarInset.None,
+      Active = true,
+      BackgroundTransparency = 1, BorderSizePixel = 0,
+      LayoutOrder = 3,
+      Size = UDim2.new(1, 0, 0, 60),
+      ZIndex = 5,
+    }, self.Root)
+    Custom:Create("UIPadding", {
+      PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6),
+      PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 8),
+    }, self.Content)
+    local List = Custom:Create("UIListLayout", {
+      Padding = UDim.new(0, 3),
+      SortOrder = Enum.SortOrder.LayoutOrder,
+    }, self.Content)
+    local function Fit()
+      self.Content.Size = UDim2.new(1, 0, 0, math.min(List.AbsoluteContentSize.Y + 12, MaxHeight))
+    end
+    self:_bind(List:GetPropertyChangedSignal("AbsoluteContentSize"), Fit)
+    Fit()
+  else
+    self.Content = Custom:Create("Frame", {
+      Name = "Content",
+      BackgroundTransparency = 1, BorderSizePixel = 0,
+      AutomaticSize = Enum.AutomaticSize.Y,
+      LayoutOrder = 3,
+      Size = UDim2.new(1, 0, 0, 0),
+      ZIndex = 5,
+    }, self.Root)
+    Custom:Create("UIPadding", {
+      PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6),
+      PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6),
+    }, self.Content)
+    Custom:Create("UIListLayout", {
+      Padding = UDim.new(0, 3),
+      SortOrder = Enum.SortOrder.LayoutOrder,
+    }, self.Content)
+  end
+
+  if type(self.Hooks.BuildItems) == "function" then
+    self.Items = self.Hooks.BuildItems(self.Content, MaxHeight and self.Content or nil)
+  else
+    warn("[KingAkbarUI] GroupBox: Hooks.BuildItems tidak ada, kotak kosong")
+  end
+
+  self.Content.Visible = Open
+  self.Divider.Visible = Open
+  return self
+end
+
+function GroupBox:_bind(Signal, Fn)
+  return BindOwned(self, Signal, Fn, "GroupBox")
+end
+
+-- SetValue(true/false, fire?) — buka/tutup isi; fire = false tidak memanggil OnChanged
+function GroupBox:SetValue(Open, Fire)
+  if self.Destroyed then return end
+  Open = Open and true or false
+  if Open == self.Open then return end
+  self.Open = Open
+  self.Content.Visible = Open
+  self.Divider.Visible = Open
+  if self.Arrow then Tween(self.Arrow, { Rotation = Open and 90 or 0 }, 0.15) end
+  if self.Hooks.OnToggle then SafeCall(self.Hooks.OnToggle) end
+  if Fire ~= false then FireChanged(self, Open) end
+end
+
+function GroupBox:GetValue() return self.Open end
+function GroupBox:Toggle() self:SetValue(not self.Open) end
+
+function GroupBox:SetTitle(Text)
+  if self.TitleLabel then self.TitleLabel.Text = tostring(Text) end
+end
+
+-- OnChanged(function(terbuka) end) → { Disconnect = fn }
+function GroupBox:OnChanged(Fn)
+  return AddChanged(self, Fn, "GroupBox:OnChanged")
+end
+
+function GroupBox:SetVisible(State)
+  if self.Root then self.Root.Visible = State and true or false end
+end
+
+function GroupBox:Destroy()
+  if self.Destroyed then return end
+  self.Destroyed = true
+  for _, c in ipairs(self.Connections) do
+    pcall(function() c:Disconnect() end)
+  end
+  table.clear(self.Connections)
+  table.clear(self.Callbacks)
+  if self.Root then self.Root:Destroy() end
 end
 
 -- ═══════════════════════════════════════════════════
@@ -2703,6 +2918,34 @@ function Speed_Library:CreateWindow(Config)
       return TabBox.new(ScrolLayers, CountSection, TBConfig, {
         BuildItems = function(Container) return BuildItems(Container, ScrolLayers) end,
         OnSelect   = function()
+          CloseDropdownPanel()
+          ClosePicker()
+        end,
+      })
+    end
+
+    -- ═══════════ GroupBox ═══════════
+    -- Tab:AddGroupBox({ Title = "Judul", Collapsible = false, Open = true, MaxHeight = nil })
+    function Sections:AddGroupBox(GBConfig)
+      CountSection += 1
+      return GroupBox.new(ScrolLayers, CountSection, GBConfig, {
+        -- Inner = ScrollingFrame milik GroupBox (hanya jika MaxHeight diisi)
+        BuildItems = function(Container, Inner)
+          local Ref = ScrolLayers
+          if Inner then
+            -- slider mematikan scroll saat digeser: matikan halaman DAN scroll dalam
+            Ref = setmetatable({}, {
+              __newindex = function(_, k, v)
+                if k == "ScrollingEnabled" then
+                  ScrolLayers.ScrollingEnabled = v
+                  Inner.ScrollingEnabled = v
+                end
+              end,
+            })
+          end
+          return BuildItems(Container, Ref)
+        end,
+        OnToggle = function()
           CloseDropdownPanel()
           ClosePicker()
         end,
