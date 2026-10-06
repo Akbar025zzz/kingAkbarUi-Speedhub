@@ -1,42 +1,49 @@
-# TabBox
+-- Contoh TabBox (King Akbar UI v1.6)
+local Lib = loadstring(game:HttpGet(
+  "https://raw.githubusercontent.com/Akbar025zzz/kingAkbarUi-Speedhub/refs/heads/main/init.lua"
+))()
 
-Satu kotak berisi beberapa halaman (Page). Hierarki: Window → Tab → **TabBox → Page** → Komponen.
+local Win = Lib:CreateWindow({ "King Akbar", "TabBox demo", 100, UDim2.fromOffset(420, 280) })
+local Tab = Win:CreateTab({ "Main", "rbxassetid://7734010488" })
 
-```lua
-local Box  = Tab:AddTabBox({ Tabs = { "Farm", "Combat" }, Default = "Farm", Swipe = true })
+-- 1) Buat TabBox (Swipe = true: geser kiri/kanan di HP untuk pindah halaman)
+local Box = Tab:AddTabBox({
+  Tabs    = { "Farm", "Combat", "Misc" },
+  Default = "Farm",
+  Swipe   = true,
+})
+
+-- 2) Isi tiap halaman dengan komponen biasa
 local Farm = Box:GetTab("Farm")
-Farm:AddToggle({ "Auto Farm", "", false, function(v) end })
+Farm:AddToggle({ "Auto Farm", "Farm otomatis", false, function(v) print("Farm:", v) end })
+Farm:AddSlider({ "Delay", "", 1, 0, 10, 1, function(v) print("Delay:", v) end })
 
-local Extra = Box:AddTab("Extra")      -- tambah halaman belakangan
-```
+local Combat = Box:GetTab("Combat")
+Combat:AddDropdown({ "Mode", "", false, { "A", "B" }, { "A" }, function(v) print("Mode:", v[1]) end })
 
-## Config
+local Misc = Box:GetTab("Misc")
+Misc:AddButton({
+  Title    = "Tes Notifikasi",
+  Callback = function()
+    Lib:SetNotification({ "King Akbar", "TabBox", "Halaman aktif: " .. tostring(Box:GetValue()) })
+  end,
+})
 
-| Field | Default | Deskripsi |
-| --- | --- | --- |
-| `Tabs` | `{}` | Daftar nama halaman (boleh juga `AddTabBox({ "A", "B" })`) |
-| `Default` | halaman pertama | Nama atau nomor halaman awal |
-| `Swipe` | `false` | Geser kiri/kanan (touch) untuk pindah halaman |
+-- 3) Halaman bisa juga ditambah belakangan
+local Extra = Box:AddTab("Extra")
+Extra:AddParagraph({ "Info", "Halaman ini dibuat lewat Box:AddTab()" })
 
-## TabBox
+-- 4) API standar
+local conn = Box:OnChanged(function(nama, index)
+  print("Pindah ke:", nama, index)
+end)
 
-| Method | Deskripsi |
-| --- | --- |
-| `AddTab(nama)` | Tambah halaman, return `Page` |
-| `GetTab(nama \| nomor)` | Ambil `Page` |
-| `SetValue(nama \| nomor, fire?)` | Pindah halaman; `fire = false` tidak memanggil `OnChanged` |
-| `GetValue()` / `GetIndex()` | Nama / nomor halaman aktif |
-| `OnChanged(fn)` | `fn(nama, nomor)`; return `{ Disconnect }`; bisa didaftarkan berkali-kali |
-| `SetVisible(bool)` | Tampil/sembunyi seluruh kotak |
-| `Destroy()` | Hapus kotak dan semua koneksinya |
+Box:SetValue("Combat")          -- pindah halaman (memanggil OnChanged)
+Box:SetValue(1, false)          -- pindah tanpa memanggil OnChanged
+print(Box:GetValue())           --> "Farm"
 
-## Page
-
-Punya semua komponen dari [api.md](api.md) (`AddToggle`, `AddSlider`, ...) ditambah:
-
-| Method | Deskripsi |
-| --- | --- |
-| `Select()` | Pindah ke halaman ini |
-| `SetTitle(text)` | Ganti nama halaman |
-| `SetVisible(bool)` | Sembunyikan/tampilkan tombol halaman |
-| `Destroy()` | Hapus halaman |
+Extra:SetVisible(false)         -- sembunyikan tombol halaman
+-- Extra:Destroy()              -- hapus halaman
+-- conn:Disconnect()            -- lepas listener
+-- Box:SetVisible(false)        -- sembunyikan seluruh TabBox
+-- Box:Destroy()                -- hapus TabBox + semua koneksinya
